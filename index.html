@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLG — Gestion Complète v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bleu: #1F4E79;
+  --bleu-clair: #2E6DA4;
+  --or: #C9A84C;
+  --or-clair: #E8C96A;
+  --fond: #F4F6FA;
+  --blanc: #FFFFFF;
+  --gris: #E8ECF2;
+  --gris-fonce: #8A9BB0;
+  --texte: #1A2535;
+  --rouge: #C0392B;
+  --vert: #1A7A4A;
+  --vert-clair: #E8F5EE;
+  --rouge-clair: #FDECEA;
+  --or-fond: #FDF8EC;
+  --ombre: 0 2px 12px rgba(31,78,121,0.10);
+  --ombre-forte: 0 4px 24px rgba(31,78,121,0.18);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Sora',sans-serif; background:var(--fond); color:var(--texte); min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position:fixed; left:0; top:0; bottom:0; width:230px;
+  background:var(--bleu);
+  display:flex; flex-direction:column;
+  z-index:100; box-shadow:4px 0 20px rgba(0,0,0,0.15);
+}
+.sidebar-logo {
+  padding:28px 24px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo .nom { font-size:28px; font-weight:700; color:var(--or); letter-spacing:2px; }
+.sidebar-logo .sous { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; letter-spacing:1px; }
+.sidebar-nav { flex:1; padding:16px 0; overflow-y:auto; }
+.nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:11px 24px; cursor:pointer;
+  color:rgba(255,255,255,0.65); font-size:13px; font-weight:500;
+  border-left:3px solid transparent;
+  transition:all .2s;
+}
+.nav-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
+.nav-item.active { background:rgba(201,168,76,0.15); color:var(--or); border-left-color:var(--or); }
+.nav-item .ico { font-size:16px; width:20px; text-align:center; }
+.nav-sep { height:1px; background:rgba(255,255,255,0.08); margin:8px 24px; }
+.sidebar-footer { padding:16px 24px; border-top:1px solid rgba(255,255,255,0.1); }
+.sidebar-footer .date { font-size:11px; color:rgba(255,255,255,0.4); font-family:'JetBrains Mono',monospace; }
+
+/* ── MAIN ── */
+.main { margin-left:230px; padding:28px; min-height:100vh; }
+.page { display:none; }
+.page.active { display:block; }
+.page-titre { font-size:22px; font-weight:700; color:var(--bleu); margin-bottom:4px; }
+.page-sous { font-size:13px; color:var(--gris-fonce); margin-bottom:24px; }
+
+/* ── CARDS ── */
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+.card {
+  background:var(--blanc); border-radius:12px; padding:20px;
+  box-shadow:var(--ombre); border-top:3px solid transparent;
+}
+.card.bleu { border-top-color:var(--bleu); }
+.card.or { border-top-color:var(--or); }
+.card.vert { border-top-color:var(--vert); }
+.card.rouge { border-top-color:var(--rouge); }
+.card-label { font-size:11px; font-weight:600; color:var(--gris-fonce); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.card-val { font-size:24px; font-weight:700; color:var(--bleu); font-family:'JetBrains Mono',monospace; }
+.card-sub { font-size:11px; color:var(--gris-fonce); margin-top:4px; }
+
+/* ── PANELS ── */
+.panel { background:var(--blanc); border-radius:14px; padding:24px; box-shadow:var(--ombre); margin-bottom:20px; }
+.panel-titre { font-size:15px; font-weight:700; color:var(--bleu); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.panel-titre span { background:var(--bleu); color:#fff; font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500; }
+
+/* ── FORMS ── */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:12px; font-weight:600; color:var(--gris-fonce); text-transform:uppercase; letter-spacing:.5px; }
+.form-group input, .form-group select, .form-group textarea {
+  padding:10px 12px; border:1.5px solid var(--gris); border-radius:8px;
+  font-family:'Sora',sans-serif; font-size:13px; color:var(--texte);
+  background:var(--fond); transition:border-color .2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline:none; border-color:var(--bleu); background:var(--blanc);
+}
+.form-group textarea { resize:vertical; min-height:70px; }
+.form-full { grid-column:1/-1; }
+
+/* ── BOUTONS ── */
+.btn {
+  padding:10px 20px; border-radius:8px; border:none; cursor:pointer;
+  font-family:'Sora',sans-serif; font-size:13px; font-weight:600;
+  transition:all .2s; display:inline-flex; align-items:center; gap:7px;
+}
+.btn-bleu { background:var(--bleu); color:#fff; }
+.btn-bleu:hover { background:var(--bleu-clair); transform:translateY(-1px); box-shadow:var(--ombre); }
+.btn-or { background:var(--or); color:#fff; }
+.btn-or:hover { background:var(--or-clair); color:var(--texte); }
+.btn-rouge { background:var(--rouge); color:#fff; }
+.btn-rouge:hover { background:#a93226; }
+.btn-vert { background:var(--vert); color:#fff; }
+.btn-vert:hover { background:#156a3e; }
+.btn-outline { background:transparent; color:var(--bleu); border:1.5px solid var(--bleu); }
+.btn-outline:hover { background:var(--bleu); color:#fff; }
+.btn-sm { padding:6px 12px; font-size:12px; }
+.btn-row { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+
+/* ── TABLES ── */
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:var(--bleu); color:#fff; padding:10px 12px; text-align:left; font-weight:600; font-size:12px; }
+td { padding:10px 12px; border-bottom:1px solid var(--gris); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--fond); }
+.badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-vert { background:var(--vert-clair); color:var(--vert); }
+.badge-rouge { background:var(--rouge-clair); color:var(--rouge); }
+.badge-or { background:var(--or-fond); color:#7a5c00; }
+.badge-bleu { background:#E8F0FA; color:var(--bleu); }
+
+/* ── CAISSE ── */
+.caisse-statut {
+  display:flex; align-items:center; gap:16px;
+  padding:16px 20px; border-radius:10px;
+  font-size:14px; font-weight:600; margin-bottom:20px;
+}
+.caisse-ouverte { background:var(--vert-clair); color:var(--vert); border:1.5px solid var(--vert); }
+.caisse-fermee { background:var(--rouge-clair); color:var(--rouge); border:1.5px solid var(--rouge); }
+.caisse-dot { width:10px; height:10px; border-radius:50%; }
+.caisse-dot.vert { background:var(--vert); }
+.caisse-dot.rouge { background:var(--rouge); }
+
+.mvt-list { display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; }
+.mvt-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 14px; border-radius:8px; background:var(--fond);
+  border-left:3px solid transparent;
+}
+.mvt-item.entree { border-left-color:var(--vert); }
+.mvt-item.sortie { border-left-color:var(--rouge); }
+.mvt-montant { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600; }
+.mvt-montant.entree { color:var(--vert); }
+.mvt-montant.sortie { color:var(--rouge); }
+.mvt-info { font-size:12px; color:var(--gris-fonce); }
+
+/* ── RAPPORT IMPRIMABLE ── */
+.rapport-box {
+  background:var(--fond); border:1.5px dashed var(--gris-fonce);
+  border-radius:10px; padding:20px; font-family:'JetBrains Mono',monospace;
+  font-size:12px; line-height:1.8; white-space:pre-wrap;
+  max-height:350px; overflow-y:auto;
+}
+
+/* ── FIDELITE ── */
+.client-card {
+  background:var(--fond); border-radius:10px; padding:16px;
+  border-left:4px solid var(--or); margin-bottom:10px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.etoiles { color:var(--or); font-size:16px; }
+.prog-bar { height:6px; background:var(--gris); border-radius:3px; overflow:hidden; margin-top:4px; }
+.prog-fill { height:100%; background:var(--or); border-radius:3px; transition:width .4s; }
+
+/* ── FICHE COMMANDE PRINT ── */
+@media print {
+  .sidebar, .main > *:not(.page.active), .no-print { display:none!important; }
+  .main { margin-left:0!important; padding:0!important; }
+  .print-zone { display:block!important; }
+  .panel { box-shadow:none; border:1px solid #ccc; }
+}
+.print-zone { display:none; }
+
+/* ── TABS ── */
+.tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:2px solid var(--gris); padding-bottom:0; }
+.tab {
+  padding:10px 18px; cursor:pointer; font-size:13px; font-weight:600;
+  color:var(--gris-fonce); border-bottom:2px solid transparent;
+  margin-bottom:-2px; transition:all .2s; border-radius:6px 6px 0 0;
+}
+.tab.active { color:var(--bleu); border-bottom-color:var(--bleu); background:rgba(31,78,121,0.05); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* ── ALERTES STOCK ── */
+.alerte-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 16px; border-radius:8px; background:var(--rouge-clair);
+  border-left:3px solid var(--rouge); margin-bottom:8px;
+}
+.alerte-item.warn { background:var(--or-fond); border-left-color:var(--or); }
+
+/* ── MOBILE NAV ── */
+.mobile-header { display:none; }
+.mobile-nav { display:none; }
+.mobile-more-menu { display:none; }
+
+@media(max-width:768px) {
+  .sidebar { display:none; }
+  .mobile-header {
+    display:flex; align-items:center; justify-content:space-between;
+    position:fixed; top:0; left:0; right:0; height:56px;
+    background:var(--bleu); z-index:200;
+    padding:0 16px; box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+  .mobile-header .logo { font-size:22px; font-weight:700; color:var(--or); letter-spacing:2px; }
+  .mobile-header .clock-m { font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(255,255,255,0.6); }
+  .main { margin-left:0; padding:16px; padding-top:72px; padding-bottom:80px; }
+  .cards { grid-template-columns:1fr 1fr; gap:12px; }
+  .card { padding:14px; }
+  .card-val { font-size:18px; }
+  .card-label { font-size:10px; }
+  .panel { padding:16px; }
+  .form-grid { grid-template-columns:1fr; }
+  .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table { font-size:12px; min-width:480px; }
+  .page-titre { font-size:18px; }
+  .page-sous { font-size:12px; margin-bottom:16px; }
+  .btn-row { flex-direction:column; }
+  .btn { width:100%; justify-content:center; }
+  .btn-sm { width:auto !important; }
+
+  .mobile-nav {
+    display:flex; position:fixed; bottom:0; left:0; right:0; height:64px;
+    background:var(--bleu); z-index:200;
+    box-shadow:0 -2px 12px rgba(0,0,0,0.2);
+    border-top:1px solid rgba(255,255,255,0.1);
+  }
+  .mob-item {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; cursor:pointer; color:rgba(255,255,255,0.55);
+    font-size:9px; font-weight:600; padding:4px 2px;
+    transition:all .2s; border-top:2px solid transparent; text-align:center;
+  }
+  .mob-item .mico { font-size:19px; line-height:1.2; }
+  .mob-item.active { color:var(--or); border-top-color:var(--or); }
+
+  .mobile-more-menu {
+    position:fixed; bottom:64px; left:0; right:0;
+    background:var(--bleu); z-index:190; padding:8px 0;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+    border-top:1px solid rgba(255,255,255,0.1);
+    transform:translateY(100%); transition:transform .25s;
+  }
+  .mobile-more-menu.open { transform:translateY(0); display:block; }
+  .more-item {
+    display:flex; align-items:center; gap:14px;
+    padding:13px 24px; cursor:pointer;
+    color:rgba(255,255,255,0.8); font-size:14px;
+    border-left:3px solid transparent;
+  }
+  .more-item.active { color:var(--or); border-left-color:var(--or); }
+  .more-item .mico { font-size:18px; }
+  .more-overlay {
+    position:fixed; inset:0; z-index:180; background:rgba(0,0,0,0.35); display:none;
+  }
+  .more-overlay.open { display:block; }
+}
+</style>
+
+<!-- Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- HEADER MOBILE -->
+<div class="mobile-header">
+  <div class="logo">SLG</div>
+  <div class="clock-m" id="clock-m">--:--</div>
+</div>
+
+<!-- NAV MOBILE BAS -->
+<nav class="mobile-nav">
+  <div class="mob-item active" id="mob-dashboard" onclick="showPage('dashboard',this)">
+    <div class="mico">&#x1F4CA;</div><div>Bord</div>
+  </div>
+  <div class="mob-item" id="mob-caisse" onclick="showPage('caisse',this)">
+    <div class="mico">&#x1F4B0;</div><div>Caisse</div>
+  </div>
+  <div class="mob-item" id="mob-commandes" onclick="showPage('commandes',this)">
+    <div class="mico">&#x1F4CB;</div><div>Commandes</div>
+  </div>
+  <div class="mob-item" id="mob-clients" onclick="showPage('clients',this)">
+    <div class="mico">&#x1F465;</div><div>Clients</div>
+  </div>
+  <div class="mob-item" id="mob-more" onclick="toggleMore()">
+    <div class="mico">&#x2630;</div><div>Plus</div>
+  </div>
+</nav>
+
+<!-- MENU PLUS mobile -->
+<div class="more-overlay" id="more-overlay" onclick="closeMore()"></div>
+<div class="mobile-more-menu" id="more-menu">
+  <div class="more-item" onclick="showPage('depenses',null);closeMore()"><span class="mico">&#x1F4E4;</span> &nbsp;D&#xe9;penses</div>
+  <div class="more-item" onclick="showPage('fiche',null);closeMore()"><span class="mico">&#x1F5A8;</span> &nbsp;Fiche commande</div>
+  <div class="more-item" onclick="showPage('stock',null);closeMore()"><span class="mico">&#x1F4E6;</span> &nbsp;Stock</div>
+  <div class="more-item" onclick="showPage('rapportJ',null);closeMore()"><span class="mico">&#x1F4C4;</span> &nbsp;Rapport journalier</div>
+  <div class="more-item" onclick="showPage('rapportM',null);closeMore()"><span class="mico">&#x1F4C8;</span> &nbsp;Rapport mensuel</div>
+  <div class="more-item" onclick="showPage('catalogue',null);closeMore()"><span class="mico">&#x1F48E;</span> &nbsp;Catalogue tarifs</div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="nom">SLG</div>
+    <div class="sous">GANSOSSO · KANDI</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="ico">📊</span><span>Tableau de bord</span></div>
+    <div class="nav-item" onclick="showPage('caisse')"><span class="ico">💰</span><span>Caisse du jour</span></div>
+    <div class="nav-item" onclick="showPage('depenses')"><span class="ico">📤</span><span>Dépenses</span></div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('commandes')"><span class="ico">📋</span><span>Commandes</span></div>
+    <div class="nav-item" onclick="showPage('fiche')"><span class="ico">🖨️</span><span>Fiche commande</span></div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('clients')"><span class="ico">👥</span><span>Clients & Fidélité</span></div>
+    <div class="nav-item" onclick="showPage('stock')"><span class="ico">📦</span><span>Stock</span></div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('rapportJ')"><span class="ico">📄</span><span>Rapport journalier</span></div>
+    <div class="nav-item" onclick="showPage('rapportM')"><span class="ico">📈</span><span>Rapport mensuel</span></div>
+    <div class="nav-item" onclick="showPage('catalogue')"><span class="ico">💎</span><span>Catalogue tarifs</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="date" id="clock">--:--:--</div>
+    <div class="date" id="dateAff"></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ════════════════════════════════ DASHBOARD ════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-titre">📊 Tableau de bord</div>
+  <div class="page-sous">Vue générale de la journée et du mois</div>
+  <div class="cards" id="dash-cards">
+    <div class="card bleu"><div class="card-label">CA Aujourd'hui</div><div class="card-val" id="d-cajour">0 FCFA</div><div class="card-sub">Encaissements du jour</div></div>
+    <div class="card vert"><div class="card-label">Résultat net</div><div class="card-val" id="d-net">0 FCFA</div><div class="card-sub">CA - Dépenses du jour</div></div>
+    <div class="card or"><div class="card-label">Commandes</div><div class="card-val" id="d-cmd">0</div><div class="card-sub">Ce mois</div></div>
+    <div class="card rouge"><div class="card-label">Alertes stock</div><div class="card-val" id="d-alerte">0</div><div class="card-sub">Articles en dessous du seuil</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="panel">
+      <div class="panel-titre">💰 Caisse du jour</div>
+      <div id="dash-caisse-info" style="font-size:13px;color:var(--gris-fonce);">Chargement...</div>
+    </div>
+    <div class="panel">
+      <div class="panel-titre">⚠️ Alertes stock</div>
+      <div id="dash-alertes">Chargement...</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-titre">📋 Dernières commandes</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>N°</th><th>Client</th><th>Service</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody id="dash-cmd-tbody"><tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);">Aucune commande</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ CAISSE ════════════════════════════════ -->
+<div class="page" id="page-caisse">
+  <div class="page-titre">💰 Caisse du jour</div>
+  <div class="page-sous">Gestion quotidienne — ouverture, encaissements, fermeture</div>
+
+  <div id="caisse-statut-bar"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <!-- Ouverture / Fermeture -->
+    <div class="panel">
+      <div class="panel-titre">🔑 Contrôle caisse</div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Fond de caisse (FCFA)</label>
+        <input type="number" id="fond-caisse" placeholder="Ex: 5000" min="0">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-vert" onclick="ouvrirCaisse()">▶ Ouvrir la caisse</button>
+        <button class="btn btn-rouge" onclick="fermerCaisse()">⏹ Fermer & Rapport</button>
+      </div>
+    </div>
+    <!-- Résumé -->
+    <div class="panel">
+      <div class="panel-titre">📊 Résumé du jour</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Fond d'ouverture</span><strong id="r-fond" style="font-family:JetBrains Mono">0 FCFA</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--vert)">+ Encaissements</span><strong id="r-entrees" style="font-family:JetBrains Mono;color:var(--vert)">0 FCFA</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--rouge)">- Dépenses</span><strong id="r-sorties" style="font-family:JetBrains Mono;color:var(--rouge)">0 FCFA</strong></div>
+        <div style="height:1px;background:var(--gris);margin:4px 0;"></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;"><span>Solde actuel</span><strong id="r-solde" style="font-family:JetBrains Mono;color:var(--bleu)">0 FCFA</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nouveau mouvement -->
+  <div class="panel">
+    <div class="panel-titre">➕ Ajouter un mouvement</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="mvt-type">
+          <option value="entree">✅ Encaissement (entrée)</option>
+          <option value="sortie">❌ Dépense (sortie)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Montant (FCFA)</label>
+        <input type="number" id="mvt-montant" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="mvt-desc" placeholder="Ex: Photo identité x4, Encre imprimante...">
+      </div>
+      <div class="form-group">
+        <label>Catégorie</label>
+        <select id="mvt-cat">
+          <option value="impression">Impression t-shirt</option>
+          <option value="photo">Photo identité</option>
+          <option value="tableau">Tableau photo</option>
+          <option value="acompte">Acompte reçu</option>
+          <option value="consommable">Achat consommable</option>
+          <option value="loyer">Loyer / charges</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-bleu" onclick="ajouterMouvement()">➕ Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- Liste des mouvements -->
+  <div class="panel">
+    <div class="panel-titre">📜 Mouvements du jour <span id="nb-mvt">0</span></div>
+    <div class="mvt-list" id="mvt-list">
+      <div style="text-align:center;color:var(--gris-fonce);font-size:13px;padding:20px;">Aucun mouvement enregistré</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ DÉPENSES ════════════════════════════════ -->
+<div class="page" id="page-depenses">
+  <div class="page-titre">📤 Dépenses</div>
+  <div class="page-sous">Suivi détaillé des sorties d'argent</div>
+  <div class="panel">
+    <div class="panel-titre">➕ Nouvelle dépense</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="dep-date">
+      </div>
+      <div class="form-group">
+        <label>Montant (FCFA)</label>
+        <input type="number" id="dep-montant" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Catégorie</label>
+        <select id="dep-cat">
+          <option value="consommable">Consommables (encre, papier, blank)</option>
+          <option value="loyer">Loyer local</option>
+          <option value="electricite">Électricité / connexion</option>
+          <option value="transport">Transport / livraison</option>
+          <option value="maintenance">Maintenance matériel</option>
+          <option value="salaire">Rémunération associé</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="dep-desc" placeholder="Préciser la dépense...">
+      </div>
+      <div class="form-group">
+        <label>Décidé par</label>
+        <select id="dep-qui">
+          <option value="directeur">Directeur (Ulrich)</option>
+          <option value="associe">Associé</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Justificatif</label>
+        <select id="dep-justif">
+          <option value="oui">Reçu obtenu</option>
+          <option value="non">Sans reçu</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-bleu" onclick="ajouterDepense()">💾 Enregistrer la dépense</button>
+    </div>
+  </div>
+
+  <!-- Résumé par catégorie -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="panel">
+      <div class="panel-titre">📊 Ce mois — par catégorie</div>
+      <div id="dep-categories" style="font-size:13px;"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-titre">📈 Totaux</div>
+      <div style="display:flex;flex-direction:column;gap:10px;" id="dep-totaux"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titre">📜 Historique des dépenses</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Date</th><th>Catégorie</th><th>Description</th><th>Montant</th><th>Décidé par</th><th>Justificatif</th><th></th></tr></thead>
+      <tbody id="dep-tbody"><tr><td colspan="7" style="text-align:center;color:var(--gris-fonce);">Aucune dépense</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ COMMANDES ════════════════════════════════ -->
+<div class="page" id="page-commandes">
+  <div class="page-titre">📋 Commandes</div>
+  <div class="page-sous">Suivi de toutes les commandes clients</div>
+  <div class="panel">
+    <div class="panel-titre">➕ Nouvelle commande</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nom du client</label>
+        <input type="text" id="cmd-client" placeholder="Nom complet">
+      </div>
+      <div class="form-group">
+        <label>Contact</label>
+        <input type="text" id="cmd-contact" placeholder="Téléphone">
+      </div>
+      <div class="form-group">
+        <label>Service</label>
+        <select id="cmd-service">
+          <option value="impression">Impression t-shirt</option>
+          <option value="photo">Photo d'identité</option>
+          <option value="tableau">Tableau photo</option>
+          <option value="calendrier">Calendrier personnalisé</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Quantité</label>
+        <input type="number" id="cmd-qte" placeholder="1" min="1" value="1">
+      </div>
+      <div class="form-group">
+        <label>Prix total (FCFA)</label>
+        <input type="number" id="cmd-prix" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Acompte versé (FCFA)</label>
+        <input type="number" id="cmd-acompte" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Date de livraison</label>
+        <input type="date" id="cmd-livraison">
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select id="cmd-statut">
+          <option value="en_cours">En cours</option>
+          <option value="pret">Prêt</option>
+          <option value="livre">Livré</option>
+          <option value="annule">Annulé</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label>Description / détails</label>
+        <textarea id="cmd-desc" placeholder="Couleurs, tailles, texte à imprimer, format photo..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-bleu" onclick="ajouterCommande()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titre">📜 Liste des commandes</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="btn btn-sm btn-outline" onclick="filtrerCmd('all')">Toutes</button>
+      <button class="btn btn-sm btn-outline" onclick="filtrerCmd('en_cours')">En cours</button>
+      <button class="btn btn-sm btn-outline" onclick="filtrerCmd('pret')">Prêtes</button>
+      <button class="btn btn-sm btn-outline" onclick="filtrerCmd('livre')">Livrées</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>N°</th><th>Client</th><th>Service</th><th>Prix</th><th>Acompte</th><th>Solde</th><th>Livraison</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="cmd-tbody"><tr><td colspan="9" style="text-align:center;color:var(--gris-fonce);">Aucune commande</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ FICHE COMMANDE ════════════════════════════════ -->
+<div class="page" id="page-fiche">
+  <div class="page-titre">🖨️ Fiche de commande imprimable</div>
+  <div class="page-sous">Remplir et imprimer la fiche à remettre au client</div>
+  <div class="panel no-print">
+    <div class="panel-titre">📝 Saisie rapide</div>
+    <div class="form-grid">
+      <div class="form-group"><label>N° de commande</label><input type="text" id="f-num" placeholder="Ex: SLG-2026-001"></div>
+      <div class="form-group"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="form-group"><label>Nom du client</label><input type="text" id="f-client" placeholder="Nom complet"></div>
+      <div class="form-group"><label>Contact</label><input type="text" id="f-contact" placeholder="Téléphone"></div>
+      <div class="form-group"><label>Service demandé</label><input type="text" id="f-service" placeholder="Ex: Impression t-shirt x5"></div>
+      <div class="form-group"><label>Délai convenu</label><input type="text" id="f-delai" placeholder="Ex: 48h, Vendredi"></div>
+      <div class="form-group"><label>Prix total (FCFA)</label><input type="number" id="f-total" placeholder="0"></div>
+      <div class="form-group"><label>Acompte versé (FCFA)</label><input type="number" id="f-acompte" placeholder="0"></div>
+      <div class="form-group form-full"><label>Description détaillée</label><textarea id="f-desc" placeholder="Couleurs, tailles, texte, format, fond photo..."></textarea></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-bleu" onclick="genererFiche()">👁 Aperçu</button>
+      <button class="btn btn-or" onclick="imprimerFiche()">🖨️ Imprimer</button>
+    </div>
+  </div>
+
+  <!-- Zone imprimable -->
+  <div id="zone-fiche" style="display:none;" class="panel">
+    <div style="text-align:center;margin-bottom:20px;border-bottom:2px solid var(--or);padding-bottom:16px;">
+      <div style="font-size:32px;font-weight:700;color:var(--bleu);letter-spacing:3px;">SLG</div>
+      <div style="font-size:13px;color:var(--gris-fonce);">Services Visuels & Graphiques — Gansosso, Kandi, Bénin</div>
+      <div style="font-size:18px;font-weight:700;color:var(--texte);margin-top:8px;">FICHE DE COMMANDE</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--gris);border-radius:8px;overflow:hidden;margin-bottom:16px;">
+      <div style="padding:10px 14px;border-right:1px solid var(--gris);border-bottom:1px solid var(--gris);background:var(--fond);"><strong style="font-size:11px;color:var(--gris-fonce);">N° COMMANDE</strong><div id="af-num" style="font-family:JetBrains Mono;font-size:15px;font-weight:600;"></div></div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--gris);"><strong style="font-size:11px;color:var(--gris-fonce);">DATE</strong><div id="af-date" style="font-size:15px;"></div></div>
+      <div style="padding:10px 14px;border-right:1px solid var(--gris);border-bottom:1px solid var(--gris);background:var(--fond);"><strong style="font-size:11px;color:var(--gris-fonce);">CLIENT</strong><div id="af-client" style="font-size:15px;font-weight:600;"></div></div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--gris);"><strong style="font-size:11px;color:var(--gris-fonce);">CONTACT</strong><div id="af-contact" style="font-size:15px;"></div></div>
+      <div style="padding:10px 14px;border-right:1px solid var(--gris);border-bottom:1px solid var(--gris);background:var(--fond);"><strong style="font-size:11px;color:var(--gris-fonce);">SERVICE</strong><div id="af-service" style="font-size:15px;"></div></div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--gris);"><strong style="font-size:11px;color:var(--gris-fonce);">DÉLAI CONVENU</strong><div id="af-delai" style="font-size:15px;"></div></div>
+    </div>
+    <div style="border:1px solid var(--gris);border-radius:8px;padding:12px 14px;margin-bottom:16px;background:var(--fond);">
+      <strong style="font-size:11px;color:var(--gris-fonce);">DESCRIPTION DÉTAILLÉE</strong>
+      <div id="af-desc" style="font-size:14px;margin-top:4px;min-height:40px;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--bleu);border-radius:8px;overflow:hidden;margin-bottom:20px;">
+      <div style="padding:12px 14px;background:var(--bleu);color:#fff;text-align:center;"><div style="font-size:11px;opacity:.7;">PRIX TOTAL</div><div id="af-total" style="font-size:18px;font-weight:700;font-family:JetBrains Mono;"></div></div>
+      <div style="padding:12px 14px;background:#E8F5EE;text-align:center;border-right:1px solid var(--gris);"><div style="font-size:11px;color:var(--gris-fonce);">ACOMPTE VERSÉ</div><div id="af-acompte" style="font-size:18px;font-weight:700;font-family:JetBrains Mono;color:var(--vert);"></div></div>
+      <div style="padding:12px 14px;background:var(--rouge-clair);text-align:center;"><div style="font-size:11px;color:var(--gris-fonce);">SOLDE RESTANT</div><div id="af-solde" style="font-size:18px;font-weight:700;font-family:JetBrains Mono;color:var(--rouge);"></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:20px;padding-top:16px;border-top:1px solid var(--gris);">
+      <div><div style="font-size:11px;color:var(--gris-fonce);margin-bottom:30px;">SIGNATURE RESPONSABLE SLG</div><div style="border-top:1px solid var(--texte);padding-top:4px;font-size:11px;color:var(--gris-fonce);">Nom & Signature</div></div>
+      <div><div style="font-size:11px;color:var(--gris-fonce);margin-bottom:30px;">SIGNATURE CLIENT (bon pour accord)</div><div style="border-top:1px solid var(--texte);padding-top:4px;font-size:11px;color:var(--gris-fonce);">Nom & Signature</div></div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--gris-fonce);font-style:italic;">Acompte non remboursable en cas d'annulation après démarrage • Solde dû à la livraison • SLG Gansosso, Kandi</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ CLIENTS & FIDÉLITÉ ════════════════════════════════ -->
+<div class="page" id="page-clients">
+  <div class="page-titre">👥 Clients & Fidélité</div>
+  <div class="page-sous">Suivi des clients récurrents et programme de fidélité</div>
+
+  <div class="panel">
+    <div class="panel-titre">➕ Ajouter / Mettre à jour un client</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nom complet</label><input type="text" id="cli-nom" placeholder="Nom du client"></div>
+      <div class="form-group"><label>Téléphone</label><input type="text" id="cli-tel" placeholder="Numéro"></div>
+      <div class="form-group"><label>Type</label>
+        <select id="cli-type">
+          <option value="particulier">Particulier</option>
+          <option value="ecole">École / Lycée</option>
+          <option value="ong">ONG / Association</option>
+          <option value="admin">Administration</option>
+          <option value="entreprise">Entreprise / PME</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Services préférés</label><input type="text" id="cli-services" placeholder="Ex: t-shirts, tableaux"></div>
+      <div class="form-group"><label>Nb commandes totales</label><input type="number" id="cli-nbcmd" placeholder="0" min="0"></div>
+      <div class="form-group"><label>CA total généré (FCFA)</label><input type="number" id="cli-ca" placeholder="0" min="0"></div>
+      <div class="form-group form-full"><label>Notes</label><textarea id="cli-notes" placeholder="Préférences, contacts secondaires, historique..."></textarea></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-bleu" onclick="ajouterClient()">💾 Enregistrer</button></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titre">🏆 Classement fidélité</div>
+    <div id="fidelite-list">
+      <div style="text-align:center;color:var(--gris-fonce);font-size:13px;padding:20px;">Aucun client enregistré</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ STOCK ════════════════════════════════ -->
+<div class="page" id="page-stock">
+  <div class="page-titre">📦 Stock</div>
+  <div class="page-sous">Suivi des consommables avec alertes automatiques</div>
+  <div class="panel">
+    <div class="panel-titre">➕ Ajouter / modifier un article</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Article</label><input type="text" id="stk-nom" placeholder="Ex: Blank t-shirt M"></div>
+      <div class="form-group"><label>Stock actuel</label><input type="number" id="stk-qte" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Seuil d'alerte</label><input type="number" id="stk-seuil" placeholder="5" min="0"></div>
+      <div class="form-group"><label>Unité</label><input type="text" id="stk-unite" placeholder="pièces, feuilles, cartouche..."></div>
+      <div class="form-group"><label>Fournisseur</label><input type="text" id="stk-fournisseur" placeholder="Nom fournisseur"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-bleu" onclick="ajouterStock()">💾 Enregistrer</button></div>
+  </div>
+  <div class="panel">
+    <div class="panel-titre">📋 État du stock</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Article</th><th>Stock</th><th>Seuil</th><th>Unité</th><th>Fournisseur</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="stk-tbody"><tr><td colspan="7" style="text-align:center;color:var(--gris-fonce);">Aucun article</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ RAPPORT JOURNALIER ════════════════════════════════ -->
+<div class="page" id="page-rapportJ">
+  <div class="page-titre">📄 Rapport journalier</div>
+  <div class="page-sous">Générer le rapport de fin de journée à envoyer au Directeur</div>
+  <div class="panel">
+    <div class="panel-titre">📅 Sélectionner la date</div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <input type="date" id="rj-date" style="padding:10px 14px;border:1.5px solid var(--gris);border-radius:8px;font-family:Sora;font-size:13px;">
+      <button class="btn btn-bleu" onclick="genererRapportJ()">📊 Générer le rapport</button>
+      <button class="btn btn-or" onclick="copierRapport()" id="btn-copier" style="display:none;">📋 Copier (WhatsApp)</button>
+    </div>
+  </div>
+  <div class="panel" id="rapport-j-box" style="display:none;">
+    <div class="panel-titre">📋 Rapport journalier SLG</div>
+    <div class="rapport-box" id="rapport-j-contenu"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ RAPPORT MENSUEL ════════════════════════════════ -->
+<div class="page" id="page-rapportM">
+  <div class="page-titre">📈 Rapport mensuel</div>
+  <div class="page-sous">Synthèse financière mensuelle</div>
+  <div class="panel">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+      <select id="rm-mois" style="padding:10px 14px;border:1.5px solid var(--gris);border-radius:8px;font-family:Sora;font-size:13px;">
+        <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
+        <option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option>
+        <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
+        <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+      </select>
+      <input type="number" id="rm-annee" placeholder="2026" value="2026" style="padding:10px 14px;border:1.5px solid var(--gris);border-radius:8px;font-family:Sora;font-size:13px;width:100px;">
+      <button class="btn btn-bleu" onclick="genererRapportM()">📊 Générer</button>
+    </div>
+    <div id="rapport-m-content"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ CATALOGUE ════════════════════════════════ -->
+<div class="page" id="page-catalogue">
+  <div class="page-titre">💎 Catalogue des tarifs</div>
+  <div class="page-sous">Tarifs officiels SLG — Version Mai 2026</div>
+
+  <div class="panel">
+    <div class="panel-titre">👕 Impression sur t-shirt</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Prestation</th><th>Prix unitaire</th><th>Délai</th></tr></thead>
+      <tbody>
+        <tr><td>T-shirt une couleur (face)</td><td>2 500 FCFA</td><td>24h</td></tr>
+        <tr><td>T-shirt deux couleurs (face)</td><td>3 500 FCFA</td><td>48h</td></tr>
+        <tr><td>T-shirt recto + verso</td><td>4 500 FCFA</td><td>48h</td></tr>
+        <tr><td>T-shirt full couleur (sublimation)</td><td>5 000 FCFA</td><td>48h</td></tr>
+        <tr><td>Polo impression une face</td><td>3 500 FCFA</td><td>48h</td></tr>
+        <tr><td>Commande groupe (≥ 10 pièces)</td><td>Sur devis</td><td>Sur devis</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titre">📸 Photo d'identité</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Prestation</th><th>Prix</th><th>Délai</th></tr></thead>
+      <tbody>
+        <tr><td>4 photos 4x4 cm (standard)</td><td>1 000 FCFA</td><td>Immédiat</td></tr>
+        <tr><td>4 photos 3.5x4.5 cm (passeport)</td><td>1 000 FCFA</td><td>Immédiat</td></tr>
+        <tr><td>Retouche légère + tirage</td><td>1 500 FCFA</td><td>Immédiat</td></tr>
+        <tr><td>Séance photo complète (fond coloré)</td><td>2 500 FCFA</td><td>Immédiat</td></tr>
+        <tr><td>Format numérique sur clé USB</td><td>+500 FCFA</td><td>Immédiat</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titre">🖼️ Tableaux photo</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Prestation</th><th>Prix</th><th>Délai</th></tr></thead>
+      <tbody>
+        <tr><td>Portrait simple 20x30 cm encadré</td><td>5 000 FCFA</td><td>24h</td></tr>
+        <tr><td>Portrait simple 30x40 cm encadré</td><td>8 000 FCFA</td><td>24h</td></tr>
+        <tr><td>Montage famille 30x40 cm encadré</td><td>10 000 FCFA</td><td>48h</td></tr>
+        <tr><td>Montage famille 40x60 cm encadré</td><td>15 000 FCFA</td><td>48h</td></tr>
+        <tr><td>Tableau mémoriel 30x40 cm</td><td>10 000 FCFA</td><td>24h</td></tr>
+        <tr><td>Tableau mémoriel 40x60 cm</td><td>18 000 FCFA</td><td>24h</td></tr>
+        <tr><td>Calendrier personnalisé A3</td><td>8 000 FCFA</td><td>48h</td></tr>
+        <tr><td>Calendrier personnalisé A2</td><td>12 000 FCFA</td><td>48h</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel" style="background:var(--or-fond);border-left:4px solid var(--or);">
+    <div class="panel-titre">📌 Politique tarifaire</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+      <div>✅ Acompte 50% obligatoire pour toute commande > 5 000 FCFA</div>
+      <div>✅ Solde à la livraison — aucune commande livrée sans paiement complet</div>
+      <div>⚡ Commandes express (< 12h) : majoration de 20%</div>
+      <div>❌ Annulation après démarrage : acompte non remboursable</div>
+      <div>🚫 Crédit client : interdit sauf accord écrit du Directeur</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════════════════════════
+// ════ FIREBASE CONFIG ════
+// Firebase chargé via CDN compat (voir <head>)
+const firebaseConfig = {
+  apiKey: "AIzaSyBaONRrGGDmWrw5ImzUCvPTF8UHIofGeAI",
+  authDomain: "slg-kandi.firebaseapp.com",
+  databaseURL: "https://slg-kandi-default-rtdb.firebaseio.com",
+  projectId: "slg-kandi",
+  storageBucket: "slg-kandi.firebasestorage.app",
+  messagingSenderId: "778728074415",
+  appId: "1:778728074415:web:239d1da686e6f644cdf85a"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Cache local (évite les re-lectures Firebase à chaque appel)
+const _cache = {};
+let _ready = false;
+const _readyCallbacks = [];
+
+// Indicateur de connexion
+function setConnStatus(ok) {
+  const el = document.getElementById('conn-status');
+  if(!el) return;
+  el.textContent = ok ? '🟢 En ligne' : '🔴 Hors ligne';
+  el.style.color = ok ? 'var(--vert)' : 'var(--rouge)';
+}
+
+// ── Fallback localStorage si Firebase inaccessible ──
+function getLocalFallback(k) {
+  try { return JSON.parse(localStorage.getItem('slg_'+k)) || (k==='caisses'?{}:[]); }
+  catch { return k==='caisses'?{}:[]; }
+}
+
+// Charger toutes les données au démarrage
+async function loadAllData() {
+  showToast('Connexion Firebase...', 'info');
+  
+  // Timeout 8 secondes
+  const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
+  
+  try {
+    const snap = await Promise.race([db.ref('slg').once('value'), timeout]);
+    const data = snap.val() || {};
+
+    // Nœuds Firebase v1 : commandes, contacts, stock, charges, recettes, catalogue
+    // Correspondance v2  : commandes, clients,  stocks, depenses, caisses,  catalogue
+    _cache.commandes = data.commandes ? Object.values(data.commandes) : [];
+    _cache.clients   = data.contacts  ? Object.values(data.contacts)  : [];
+    _cache.stocks    = data.stock     ? Object.values(data.stock)     : [];
+    _cache.depenses  = data.charges   ? Object.values(data.charges)   : [];
+    _cache.caisses   = data.recettes  || {};
+    _cache.catalogue = data.catalogue ? Object.values(data.catalogue) : [];
+    setConnStatus(true);
+    showToast('Données chargées ✓', 'ok');
+
+  } catch(e) {
+    console.warn('Firebase inaccessible, fallback localStorage:', e.message);
+    setConnStatus(false);
+    // Utiliser localStorage comme fallback complet
+    _cache.commandes = getLocalFallback('commandes');
+    _cache.clients   = getLocalFallback('clients');
+    _cache.stocks    = getLocalFallback('stocks');
+    _cache.depenses  = getLocalFallback('depenses');
+    _cache.caisses   = getLocalFallback('caisses');
+    _cache.catalogue = getLocalFallback('catalogue');
+    showToast('Mode hors ligne — données locales', 'warn');
+  }
+  _ready = true;
+  _readyCallbacks.forEach(cb => cb());
+}
+
+function onReady(cb) { if(_ready) cb(); else _readyCallbacks.push(cb); }
+
+// ════ DB API ════
+const DB = {
+  // Listes (commandes, clients, stocks, depenses)
+  get: k => _cache[k] || [],
+
+  set: async (k, arr) => {
+    _cache[k] = arr;
+    // Mapping clés internes v2 → nœuds Firebase v1
+    const fbKey = {commandes:'commandes', clients:'contacts', stocks:'stock', depenses:'charges'}[k] || k;
+    try { localStorage.setItem('slg_'+k, JSON.stringify(arr)); } catch(e) {}
+    try {
+      const obj = {};
+      arr.forEach(item => { if(item && item.id) obj[item.id] = item; });
+      await db.ref('slg/'+fbKey).set(obj);
+    } catch(e) { console.warn('Firebase write error:', e); showToast('Sauvegarde locale uniquement', 'warn'); }
+  },
+
+  // Objet simple (caisses)
+  getObj: k => _cache[k] || {},
+
+  setObj: async (k, obj) => {
+    _cache[k] = obj;
+    const fbKey = {caisses:'recettes'}[k] || k;
+    try { localStorage.setItem('slg_'+k, JSON.stringify(obj)); } catch(e) {}
+    try { await db.ref('slg/'+fbKey).set(obj); }
+    catch(e) { console.warn('Firebase write error:', e); showToast('Sauvegarde locale uniquement', 'warn'); }
+  },
+};
+
+// Toast notifications
+function showToast(msg, type='ok') {
+  let t = document.getElementById('slg-toast');
+  if(!t) { t=document.createElement('div'); t.id='slg-toast'; document.body.appendChild(t);
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;transition:opacity .3s;pointer-events:none;'; }
+  const colors = {ok:'background:#1A7A4A;color:#fff',warn:'background:#C9A84C;color:#fff',info:'background:#1F4E79;color:#fff',err:'background:#C0392B;color:#fff'};
+  t.style.cssText += colors[type]||colors.ok;
+  t.textContent = msg; t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.opacity='0'; }, 2500);
+}
+
+// ════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════
+function showPage(id, mobEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  // Desktop sidebar
+  if(event && event.currentTarget && event.currentTarget.classList.contains('nav-item'))
+    event.currentTarget.classList.add('active');
+  // Mobile nav
+  document.querySelectorAll('.mob-item').forEach(m => m.classList.remove('active'));
+  if(mobEl) mobEl.classList.add('active');
+  // More menu items
+  document.querySelectorAll('.more-item').forEach(m => m.classList.remove('active'));
+  if(mobEl && mobEl.classList.contains('more-item')) mobEl.classList.add('active');
+  if(id==='dashboard') refreshDashboard();
+  if(id==='caisse') refreshCaisse();
+  if(id==='depenses') refreshDepenses();
+  if(id==='commandes') renderCommandes();
+  if(id==='clients') renderClients();
+  if(id==='stock') renderStock();
+  window.scrollTo(0,0);
+}
+
+function toggleMore() {
+  document.getElementById('more-menu').classList.toggle('open');
+  document.getElementById('more-overlay').classList.toggle('open');
+}
+function closeMore() {
+  document.getElementById('more-menu').classList.remove('open');
+  document.getElementById('more-overlay').classList.remove('open');
+}
+
+// ════════════════════════════════════════════════════════════
+//  HORLOGE
+// ════════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('fr-FR');
+  const d = now.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  const c = document.getElementById('clock'); if(c) c.textContent = t;
+  const da = document.getElementById('dateAff'); if(da) da.textContent = d;
+  const cm = document.getElementById('clock-m'); if(cm) cm.textContent = t.slice(0,5);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ════════════════════════════════════════════════════════════
+//  CAISSE
+// ════════════════════════════════════════════════════════════
+function getDateStr(d) { return (d||new Date()).toISOString().split('T')[0]; }
+
+function getCaisseJour(date) {
+  const caisses = DB.getObj('caisses');
+  return caisses[date] || { ouverte: false, fond: 0, mouvements: [], fermeture: null };
+}
+function saveCaisseJour(date, data) {
+  const caisses = DB.getObj('caisses');
+  caisses[date] = data;
+  DB.setObj('caisses', caisses);
+}
+
+async function ouvrirCaisse() {
+  const date = getDateStr();
+  let c = getCaisseJour(date);
+  if(c.ouverte) { alert('La caisse est déjà ouverte.'); return; }
+  const fond = parseFloat(document.getElementById('fond-caisse').value) || 0;
+  c.ouverte = true; c.fond = fond; c.heureOuverture = new Date().toLocaleTimeString('fr-FR');
+  saveCaisseJour(date, c);
+  refreshCaisse();
+}
+
+async function fermerCaisse() {
+  const date = getDateStr();
+  let c = getCaisseJour(date);
+  if(!c.ouverte) { alert('La caisse n\'est pas ouverte.'); return; }
+  c.heureFermeture = new Date().toLocaleTimeString('fr-FR');
+  c.ouverte = false;
+  saveCaisseJour(date, c);
+  refreshCaisse();
+  showPage('rapportJ');
+  document.getElementById('rj-date').value = date;
+  genererRapportJ();
+}
+
+async function ajouterMouvement() {
+  const date = getDateStr();
+  let c = getCaisseJour(date);
+  if(!c.ouverte) { alert('Ouvrez d\'abord la caisse.'); return; }
+  const type = document.getElementById('mvt-type').value;
+  const montant = parseFloat(document.getElementById('mvt-montant').value) || 0;
+  const desc = document.getElementById('mvt-desc').value.trim();
+  const cat = document.getElementById('mvt-cat').value;
+  if(!montant || !desc) { alert('Remplissez le montant et la description.'); return; }
+  c.mouvements.push({ type, montant, desc, cat, heure: new Date().toLocaleTimeString('fr-FR') });
+  saveCaisseJour(date, c);
+  document.getElementById('mvt-montant').value = '';
+  document.getElementById('mvt-desc').value = '';
+  refreshCaisse();
+  refreshDashboard();
+}
+
+function refreshCaisse() {
+  const date = getDateStr();
+  const c = getCaisseJour(date);
+  const entrees = c.mouvements.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
+  const sorties = c.mouvements.filter(m=>m.type==='sortie').reduce((s,m)=>s+m.montant,0);
+  const solde = c.fond + entrees - sorties;
+
+  const bar = document.getElementById('caisse-statut-bar');
+  bar.className = 'caisse-statut ' + (c.ouverte ? 'caisse-ouverte' : 'caisse-fermee');
+  bar.innerHTML = `<div class="caisse-dot ${c.ouverte?'vert':'rouge'}"></div>
+    <span>${c.ouverte ? '✅ Caisse ouverte depuis ' + (c.heureOuverture||'--') : '🔒 Caisse fermée' + (c.heureFermeture?' — fermée à '+c.heureFermeture:'')}</span>`;
+
+  document.getElementById('r-fond').textContent = fmt(c.fond);
+  document.getElementById('r-entrees').textContent = fmt(entrees);
+  document.getElementById('r-sorties').textContent = fmt(sorties);
+  document.getElementById('r-solde').textContent = fmt(solde);
+
+  const list = document.getElementById('mvt-list');
+  document.getElementById('nb-mvt').textContent = c.mouvements.length;
+  if(!c.mouvements.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--gris-fonce);font-size:13px;padding:20px;">Aucun mouvement</div>';
+    return;
+  }
+  list.innerHTML = [...c.mouvements].reverse().map(m => `
+    <div class="mvt-item ${m.type}">
+      <div>
+        <div style="font-size:13px;font-weight:600;">${m.desc}</div>
+        <div class="mvt-info">${m.heure} · ${catLabel(m.cat)}</div>
+      </div>
+      <div class="mvt-montant ${m.type}">${m.type==='entree'?'+':'-'}${fmt(m.montant)}</div>
+    </div>`).join('');
+}
+
+function catLabel(c) {
+  const map = {impression:'T-shirt',photo:'Photo ID',tableau:'Tableau',acompte:'Acompte',consommable:'Consommable',loyer:'Loyer',autre:'Autre'};
+  return map[c] || c;
+}
+
+// ════════════════════════════════════════════════════════════
+//  DÉPENSES
+// ════════════════════════════════════════════════════════════
+async function ajouterDepense() {
+  const date = document.getElementById('dep-date').value;
+  const montant = parseFloat(document.getElementById('dep-montant').value)||0;
+  const cat = document.getElementById('dep-cat').value;
+  const desc = document.getElementById('dep-desc').value.trim();
+  const qui = document.getElementById('dep-qui').value;
+  const justif = document.getElementById('dep-justif').value;
+  if(!date||!montant||!desc) { alert('Date, montant et description obligatoires.'); return; }
+  const deps = DB.get('depenses');
+  deps.push({ id: Date.now(), date, montant, cat, desc, qui, justif });
+  DB.set('depenses', deps);
+  document.getElementById('dep-montant').value='';
+  document.getElementById('dep-desc').value='';
+  refreshDepenses();
+}
+
+async function supprimerDepense(id) {
+  if(!confirm('Supprimer cette dépense ?')) return;
+  DB.set('depenses', DB.get('depenses').filter(d=>d.id!==id));
+  refreshDepenses();
+}
+
+const catDepLabels = {
+  consommable:'Consommables',loyer:'Loyer',electricite:'Électricité',
+  transport:'Transport',maintenance:'Maintenance',salaire:'Rémunération',autre:'Autre'
+};
+
+function refreshDepenses() {
+  const now = new Date();
+  const moisCourant = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const deps = DB.get('depenses');
+  const depsMois = deps.filter(d=>d.date.startsWith(moisCourant));
+
+  // Par catégorie
+  const parcats = {};
+  depsMois.forEach(d=>{ parcats[d.cat]=(parcats[d.cat]||0)+d.montant; });
+  const total = Object.values(parcats).reduce((s,v)=>s+v,0);
+  document.getElementById('dep-categories').innerHTML = Object.entries(parcats).map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gris);font-size:13px;">
+      <span>${catDepLabels[k]||k}</span>
+      <strong style="font-family:JetBrains Mono;">${fmt(v)}</strong>
+    </div>`).join('') || '<div style="color:var(--gris-fonce);font-size:13px;">Aucune dépense ce mois</div>';
+
+  document.getElementById('dep-totaux').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Dépenses ce mois</span><strong style="font-family:JetBrains Mono;color:var(--rouge);">${fmt(total)}</strong></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Dépenses totales</span><strong style="font-family:JetBrains Mono;">${fmt(deps.reduce((s,d)=>s+d.montant,0))}</strong></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Nb dépenses (mois)</span><strong>${depsMois.length}</strong></div>`;
+
+  const tbody = document.getElementById('dep-tbody');
+  if(!deps.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gris-fonce);">Aucune dépense</td></tr>'; return; }
+  tbody.innerHTML = [...deps].reverse().map(d=>`
+    <tr>
+      <td>${d.date}</td>
+      <td><span class="badge badge-rouge">${catDepLabels[d.cat]||d.cat}</span></td>
+      <td>${d.desc}</td>
+      <td style="font-family:JetBrains Mono;font-weight:600;color:var(--rouge);">${fmt(d.montant)}</td>
+      <td>${d.qui==='directeur'?'👤 Directeur':'👤 Associé'}</td>
+      <td><span class="badge ${d.justif==='oui'?'badge-vert':'badge-rouge'}">${d.justif==='oui'?'✅ Reçu':'❌ Sans reçu'}</span></td>
+      <td><button class="btn btn-sm btn-rouge" onclick="supprimerDepense(${d.id})">🗑</button></td>
+    </tr>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  COMMANDES
+// ════════════════════════════════════════════════════════════
+let cmdFiltre = 'all';
+async function ajouterCommande() {
+  const client = document.getElementById('cmd-client').value.trim();
+  const contact = document.getElementById('cmd-contact').value.trim();
+  const service = document.getElementById('cmd-service').value;
+  const qte = parseInt(document.getElementById('cmd-qte').value)||1;
+  const prix = parseFloat(document.getElementById('cmd-prix').value)||0;
+  const acompte = parseFloat(document.getElementById('cmd-acompte').value)||0;
+  const livraison = document.getElementById('cmd-livraison').value;
+  const statut = document.getElementById('cmd-statut').value;
+  const desc = document.getElementById('cmd-desc').value.trim();
+  if(!client||!prix) { alert('Client et prix obligatoires.'); return; }
+  const cmds = DB.get('commandes');
+  const id = Date.now();
+  const num = 'SLG-'+new Date().getFullYear()+'-'+String(cmds.length+1).padStart(3,'0');
+  cmds.push({ id, num, client, contact, service, qte, prix, acompte, livraison, statut, desc, date: getDateStr() });
+  DB.set('commandes', cmds);
+  // Mise à jour fidélité client
+  updateFidelite(client, contact, service, prix);
+  // Reset
+  ['cmd-client','cmd-contact','cmd-qte','cmd-prix','cmd-acompte','cmd-livraison','cmd-desc'].forEach(f=>{
+    const el = document.getElementById(f); if(el) el.value = f==='cmd-qte'?'1':'';
+  });
+  renderCommandes();
+  refreshDashboard();
+}
+
+function updateFidelite(nom, tel, service, montant) {
+  const clients = DB.get('clients');
+  const idx = clients.findIndex(c=>c.nom.toLowerCase()===nom.toLowerCase());
+  if(idx>=0) {
+    clients[idx].nbcmd = (clients[idx].nbcmd||0)+1;
+    clients[idx].ca = (clients[idx].ca||0)+montant;
+    DB.set('clients', clients);
+  }
+}
+
+function filtrerCmd(f) { cmdFiltre = f; renderCommandes(); }
+
+const svcLabels = {impression:'T-shirt',photo:'Photo ID',tableau:'Tableau',calendrier:'Calendrier',autre:'Autre'};
+const statutLabels = {en_cours:'En cours',pret:'Prêt',livre:'Livré',annule:'Annulé'};
+const statutClasses = {en_cours:'badge-or',pret:'badge-bleu',livre:'badge-vert',annule:'badge-rouge'};
+
+function renderCommandes() {
+  let cmds = DB.get('commandes');
+  if(cmdFiltre!=='all') cmds = cmds.filter(c=>c.statut===cmdFiltre);
+  const tbody = document.getElementById('cmd-tbody');
+  if(!cmds.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--gris-fonce);">Aucune commande</td></tr>'; return; }
+  tbody.innerHTML = [...cmds].reverse().map(c=>`
+    <tr>
+      <td style="font-family:JetBrains Mono;font-size:12px;">${c.num}</td>
+      <td><strong>${c.client}</strong><div style="font-size:11px;color:var(--gris-fonce);">${c.contact||''}</div></td>
+      <td>${svcLabels[c.service]||c.service}</td>
+      <td style="font-family:JetBrains Mono;">${fmt(c.prix)}</td>
+      <td style="font-family:JetBrains Mono;color:var(--vert);">${fmt(c.acompte)}</td>
+      <td style="font-family:JetBrains Mono;color:var(--rouge);">${fmt(c.prix-c.acompte)}</td>
+      <td style="font-size:12px;">${c.livraison||'—'}</td>
+      <td><span class="badge ${statutClasses[c.statut]}">${statutLabels[c.statut]}</span></td>
+      <td style="display:flex;gap:4px;">
+        <select class="btn btn-sm btn-outline" style="padding:4px 6px;" onchange="changerStatut(${c.id},this.value)">
+          <option value="">Statut</option>
+          <option value="en_cours">En cours</option>
+          <option value="pret">Prêt</option>
+          <option value="livre">Livré</option>
+          <option value="annule">Annulé</option>
+        </select>
+        <button class="btn btn-sm btn-rouge" onclick="supprimerCmd(${c.id})">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function changerStatut(id, val) {
+  if(!val) return;
+  const cmds = DB.get('commandes');
+  const idx = cmds.findIndex(c=>c.id===id);
+  if(idx>=0) { cmds[idx].statut = val; DB.set('commandes', cmds); renderCommandes(); }
+}
+async function supprimerCmd(id) {
+  if(!confirm('Supprimer cette commande ?')) return;
+  DB.set('commandes', DB.get('commandes').filter(c=>c.id!==id));
+  renderCommandes(); refreshDashboard();
+}
+
+// ════════════════════════════════════════════════════════════
+//  FICHE COMMANDE IMPRIMABLE
+// ════════════════════════════════════════════════════════════
+function genererFiche() {
+  const total = parseFloat(document.getElementById('f-total').value)||0;
+  const acompte = parseFloat(document.getElementById('f-acompte').value)||0;
+  document.getElementById('af-num').textContent = document.getElementById('f-num').value || 'SLG-'+Date.now();
+  document.getElementById('af-date').textContent = document.getElementById('f-date').value || getDateStr();
+  document.getElementById('af-client').textContent = document.getElementById('f-client').value || '—';
+  document.getElementById('af-contact').textContent = document.getElementById('f-contact').value || '—';
+  document.getElementById('af-service').textContent = document.getElementById('f-service').value || '—';
+  document.getElementById('af-delai').textContent = document.getElementById('f-delai').value || '—';
+  document.getElementById('af-desc').textContent = document.getElementById('f-desc').value || '—';
+  document.getElementById('af-total').textContent = fmt(total);
+  document.getElementById('af-acompte').textContent = fmt(acompte);
+  document.getElementById('af-solde').textContent = fmt(total-acompte);
+  document.getElementById('zone-fiche').style.display = 'block';
+}
+function imprimerFiche() { genererFiche(); window.print(); }
+
+// ════════════════════════════════════════════════════════════
+//  CLIENTS & FIDÉLITÉ
+// ════════════════════════════════════════════════════════════
+async function ajouterClient() {
+  const nom = document.getElementById('cli-nom').value.trim();
+  if(!nom) { alert('Nom obligatoire.'); return; }
+  const clients = DB.get('clients');
+  const idx = clients.findIndex(c=>c.nom.toLowerCase()===nom.toLowerCase());
+  const data = {
+    nom, tel: document.getElementById('cli-tel').value,
+    type: document.getElementById('cli-type').value,
+    services: document.getElementById('cli-services').value,
+    nbcmd: parseInt(document.getElementById('cli-nbcmd').value)||0,
+    ca: parseFloat(document.getElementById('cli-ca').value)||0,
+    notes: document.getElementById('cli-notes').value,
+    depuis: getDateStr()
+  };
+  if(idx>=0) clients[idx] = {...clients[idx],...data};
+  else clients.push({id:Date.now(),...data});
+  DB.set('clients', clients);
+  renderClients();
+}
+
+function renderClients() {
+  const clients = DB.get('clients').sort((a,b)=>b.ca-a.ca);
+  const list = document.getElementById('fidelite-list');
+  if(!clients.length) { list.innerHTML='<div style="text-align:center;color:var(--gris-fonce);font-size:13px;padding:20px;">Aucun client</div>'; return; }
+  list.innerHTML = clients.map((c,i)=>{
+    const etoiles = c.nbcmd>=20?5:c.nbcmd>=10?4:c.nbcmd>=5?3:c.nbcmd>=2?2:1;
+    const prog = Math.min(100, (c.nbcmd/20)*100);
+    return `<div class="client-card">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'''}${c.nom}</div>
+        <div style="font-size:11px;color:var(--gris-fonce);margin:2px 0;">${c.tel||''} · ${c.type} · ${c.services||''}</div>
+        <div class="etoiles">${'★'.repeat(etoiles)}${'☆'.repeat(5-etoiles)}</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${prog}%"></div></div>
+        <div style="font-size:11px;color:var(--gris-fonce);margin-top:2px;">${c.nbcmd} commandes</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:JetBrains Mono;font-weight:700;font-size:16px;color:var(--bleu);">${fmt(c.ca)}</div>
+        <div style="font-size:11px;color:var(--gris-fonce);">CA généré</div>
+        <button class="btn btn-sm btn-rouge" style="margin-top:8px;" onclick="supprimerClient(${c.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function supprimerClient(id) {
+  if(!confirm('Supprimer ce client ?')) return;
+  DB.set('clients', DB.get('clients').filter(c=>c.id!==id));
+  renderClients();
+}
+
+// ════════════════════════════════════════════════════════════
+//  STOCK
+// ════════════════════════════════════════════════════════════
+async function ajouterStock() {
+  const nom = document.getElementById('stk-nom').value.trim();
+  if(!nom) { alert('Nom de l\'article obligatoire.'); return; }
+  const stocks = DB.get('stocks');
+  const idx = stocks.findIndex(s=>s.nom.toLowerCase()===nom.toLowerCase());
+  const data = {
+    nom, qte: parseFloat(document.getElementById('stk-qte').value)||0,
+    seuil: parseFloat(document.getElementById('stk-seuil').value)||5,
+    unite: document.getElementById('stk-unite').value||'pièces',
+    fournisseur: document.getElementById('stk-fournisseur').value
+  };
+  if(idx>=0) stocks[idx]={...stocks[idx],...data};
+  else stocks.push({id:Date.now(),...data});
+  DB.set('stocks', stocks);
+  renderStock(); refreshDashboard();
+}
+
+function renderStock() {
+  const stocks = DB.get('stocks');
+  const tbody = document.getElementById('stk-tbody');
+  if(!stocks.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gris-fonce);">Aucun article</td></tr>'; return; }
+  tbody.innerHTML = stocks.map(s=>{
+    const ok = s.qte > s.seuil;
+    const warn = s.qte <= s.seuil && s.qte > 0;
+    return `<tr>
+      <td><strong>${s.nom}</strong></td>
+      <td style="font-family:JetBrains Mono;font-weight:700;">${s.qte}</td>
+      <td style="font-family:JetBrains Mono;color:var(--gris-fonce);">${s.seuil}</td>
+      <td>${s.unite}</td>
+      <td style="font-size:12px;">${s.fournisseur||'—'}</td>
+      <td><span class="badge ${ok?'badge-vert':warn?'badge-or':'badge-rouge'}">${ok?'✅ OK':warn?'⚠️ Alerte':'🔴 Épuisé'}</span></td>
+      <td style="display:flex;gap:4px;">
+        <input type="number" id="stk-add-${s.id}" placeholder="Qté" style="width:70px;padding:4px 8px;border:1px solid var(--gris);border-radius:6px;font-size:12px;" min="0">
+        <button class="btn btn-sm btn-vert" onclick="addQte(${s.id})">+</button>
+        <button class="btn btn-sm btn-rouge" onclick="supprimerStock(${s.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function addQte(id) {
+  const input = document.getElementById('stk-add-'+id);
+  const add = parseFloat(input.value)||0;
+  const stocks = DB.get('stocks');
+  const idx = stocks.findIndex(s=>s.id===id);
+  if(idx>=0) { stocks[idx].qte += add; DB.set('stocks',stocks); input.value=''; renderStock(); refreshDashboard(); }
+}
+async function supprimerStock(id) {
+  if(!confirm('Supprimer cet article ?')) return;
+  DB.set('stocks', DB.get('stocks').filter(s=>s.id!==id));
+  renderStock(); refreshDashboard();
+}
+
+// ════════════════════════════════════════════════════════════
+//  RAPPORT JOURNALIER
+// ════════════════════════════════════════════════════════════
+function genererRapportJ() {
+  const date = document.getElementById('rj-date').value || getDateStr();
+  const c = getCaisseJour(date);
+  const deps = DB.get('depenses').filter(d=>d.date===date);
+  const cmds = DB.get('commandes').filter(cmd=>cmd.date===date);
+  const entrees = c.mouvements.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
+  const sortiesCaisse = c.mouvements.filter(m=>m.type==='sortie').reduce((s,m)=>s+m.montant,0);
+  const totalDeps = deps.reduce((s,d)=>s+d.montant,0);
+  const alertes = DB.get('stocks').filter(s=>s.qte<=s.seuil);
+
+  const rapport = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 RAPPORT JOURNALIER SLG
+📅 Date : ${date}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 CAISSE
+  Fond d'ouverture : ${fmt(c.fond)}
+  Heure ouverture  : ${c.heureOuverture||'—'}
+  Heure fermeture  : ${c.heureFermeture||'En cours'}
+
+📈 ENCAISSEMENTS
+  Total entrées    : ${fmt(entrees)}
+  Nb mouvements    : ${c.mouvements.filter(m=>m.type==='entree').length}
+
+📤 DÉPENSES DU JOUR
+  Total sorties    : ${fmt(totalDeps+sortiesCaisse)}
+  Caisse           : ${fmt(sortiesCaisse)}
+  Dépenses formelles : ${fmt(totalDeps)}
+
+💵 RÉSULTAT NET
+  CA - Dépenses    : ${fmt(entrees - totalDeps - sortiesCaisse)}
+
+🔄 SOLDE DE CAISSE
+  Fond + Entrées - Sorties : ${fmt(c.fond + entrees - sortiesCaisse)}
+
+📋 COMMANDES DU JOUR (${cmds.length})
+${cmds.map(cmd=>`  • ${cmd.client} — ${svcLabels[cmd.service]||cmd.service} — ${fmt(cmd.prix)}`).join('\n')||'  Aucune commande'}
+
+📤 DÉTAIL DÉPENSES
+${deps.map(d=>`  • ${catDepLabels[d.cat]||d.cat} : ${d.desc} — ${fmt(d.montant)}`).join('\n')||'  Aucune dépense enregistrée'}
+
+⚠️ ALERTES STOCK (${alertes.length})
+${alertes.map(s=>`  • ${s.nom} : ${s.qte} ${s.unite} (seuil: ${s.seuil})`).join('\n')||'  Aucune alerte'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rapport généré le ${new Date().toLocaleString('fr-FR')}
+SLG Gansosso · Kandi, Bénin
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+  document.getElementById('rapport-j-contenu').textContent = rapport;
+  document.getElementById('rapport-j-box').style.display = 'block';
+  document.getElementById('btn-copier').style.display = 'inline-flex';
+}
+
+function copierRapport() {
+  const txt = document.getElementById('rapport-j-contenu').textContent;
+  navigator.clipboard.writeText(txt).then(()=>alert('✅ Rapport copié ! Collez-le dans WhatsApp.'));
+}
+
+// ════════════════════════════════════════════════════════════
+//  RAPPORT MENSUEL
+// ════════════════════════════════════════════════════════════
+function genererRapportM() {
+  const mois = parseInt(document.getElementById('rm-mois').value);
+  const annee = parseInt(document.getElementById('rm-annee').value)||2026;
+  const prefix = `${annee}-${String(mois+1).padStart(2,'0')}`;
+
+  const cmds = DB.get('commandes').filter(c=>c.date.startsWith(prefix));
+  const deps = DB.get('depenses').filter(d=>d.date.startsWith(prefix));
+
+  // CA par service
+  const caService = {};
+  cmds.forEach(c=>{ caService[c.service]=(caService[c.service]||0)+c.prix; });
+  const caTotal = Object.values(caService).reduce((s,v)=>s+v,0);
+  const depTotal = deps.reduce((s,d)=>s+d.montant,0);
+  const net = caTotal - depTotal;
+
+  const moisNom = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][mois];
+
+  document.getElementById('rapport-m-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+      <div class="card bleu"><div class="card-label">CA Total</div><div class="card-val" style="font-size:18px;">${fmt(caTotal)}</div></div>
+      <div class="card rouge"><div class="card-label">Dépenses</div><div class="card-val" style="font-size:18px;color:var(--rouge);">${fmt(depTotal)}</div></div>
+      <div class="card vert"><div class="card-label">Résultat net</div><div class="card-val" style="font-size:18px;color:${net>=0?'var(--vert)':'var(--rouge)'};">${fmt(net)}</div></div>
+      <div class="card or"><div class="card-label">Commandes</div><div class="card-val" style="font-size:18px;">${cmds.length}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div class="panel-titre" style="margin-bottom:12px;">📊 CA par service — ${moisNom} ${annee}</div>
+        ${Object.entries(caService).map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gris);font-size:13px;">
+            <span>${svcLabels[k]||k}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:80px;height:6px;background:var(--gris);border-radius:3px;overflow:hidden;">
+                <div style="width:${caTotal?Math.round(v/caTotal*100):0}%;height:100%;background:var(--bleu);border-radius:3px;"></div>
+              </div>
+              <strong style="font-family:JetBrains Mono;">${fmt(v)}</strong>
+            </div>
+          </div>`).join('')||'<div style="color:var(--gris-fonce);font-size:13px;">Aucune commande</div>'}
+      </div>
+      <div>
+        <div class="panel-titre" style="margin-bottom:12px;">📤 Dépenses par catégorie</div>
+        ${Object.entries(deps.reduce((acc,d)=>{acc[d.cat]=(acc[d.cat]||0)+d.montant;return acc;},{})).map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gris);font-size:13px;">
+            <span>${catDepLabels[k]||k}</span>
+            <strong style="font-family:JetBrains Mono;color:var(--rouge);">${fmt(v)}</strong>
+          </div>`).join('')||'<div style="color:var(--gris-fonce);font-size:13px;">Aucune dépense</div>'}
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════════════════
+function refreshDashboard() {
+  const today = getDateStr();
+  const now = new Date();
+  const prefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const c = getCaisseJour(today);
+  const entrees = c.mouvements.filter(m=>m.type==='entree').reduce((s,m)=>s+m.montant,0);
+  const sorties = c.mouvements.filter(m=>m.type==='sortie').reduce((s,m)=>s+m.montant,0);
+  const deps = DB.get('depenses').filter(d=>d.date===today).reduce((s,d)=>s+d.montant,0);
+  const net = entrees - sorties - deps;
+
+  const cmds = DB.get('commandes');
+  const cmdsMois = cmds.filter(cmd=>cmd.date.startsWith(prefix));
+  const stocks = DB.get('stocks');
+  const alertes = stocks.filter(s=>s.qte<=s.seuil);
+
+  document.getElementById('d-cajour').textContent = fmt(entrees);
+  document.getElementById('d-net').textContent = fmt(net);
+  document.getElementById('d-cmd').textContent = cmdsMois.length;
+  document.getElementById('d-alerte').textContent = alertes.length;
+
+  document.getElementById('dash-caisse-info').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Statut</span><span class="badge ${c.ouverte?'badge-vert':'badge-rouge'}">${c.ouverte?'Ouverte':'Fermée'}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Fond</span><strong>${fmt(c.fond)}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--vert)">Entrées</span><strong style="color:var(--vert)">${fmt(entrees)}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--rouge)">Sorties</span><strong style="color:var(--rouge)">${fmt(sorties+deps)}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--gris);padding-top:6px;"><span><strong>Solde</strong></span><strong style="font-family:JetBrains Mono;">${fmt(c.fond+entrees-sorties)}</strong></div>
+    </div>`;
+
+  document.getElementById('dash-alertes').innerHTML = alertes.length
+    ? alertes.map(s=>`<div class="alerte-item ${s.qte===0?'':'warn'}">
+        <span style="font-size:13px;">${s.nom}</span>
+        <span style="font-family:JetBrains Mono;font-weight:700;">${s.qte} ${s.unite}</span>
+      </div>`).join('')
+    : '<div style="color:var(--vert);font-size:13px;">✅ Tous les stocks sont OK</div>';
+
+  const tbody = document.getElementById('dash-cmd-tbody');
+  const derniers = [...cmds].reverse().slice(0,5);
+  tbody.innerHTML = derniers.length
+    ? derniers.map(c=>`<tr>
+        <td style="font-family:JetBrains Mono;font-size:11px;">${c.num}</td>
+        <td>${c.client}</td>
+        <td>${svcLabels[c.service]||c.service}</td>
+        <td style="font-family:JetBrains Mono;">${fmt(c.prix)}</td>
+        <td><span class="badge ${statutClasses[c.statut]}">${statutLabels[c.statut]}</span></td>
+        <td style="font-size:12px;">${c.date}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--gris-fonce);">Aucune commande</td></tr>';
+}
+
+// ════════════════════════════════════════════════════════════
+//  UTILITAIRES
+// ════════════════════════════════════════════════════════════
+function fmt(n) {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(n||0)) + ' FCFA';
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async ()=>{
+  // Pré-remplir dates
+  const today = getDateStr();
+  const els = ['dep-date','rj-date','f-date','cmd-livraison'];
+  els.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=today; });
+  const rm = document.getElementById('rm-mois');
+  if(rm) rm.value = new Date().getMonth();
+
+  // Charger Firebase puis afficher
+  await loadAllData();
+  refreshDashboard();
+  refreshCaisse();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SLG — Gestion Complète</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#FFD200;--orange:#F7971E;--dark:#0D1B2A;--mid:#1B2E3C;
+  --card:#162330;--text:#E8EDF2;--muted:#7A94A8;--green:#25D366;
+  --red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;
+}
+body{background:#0a0f16;font-family:'Outfit',sans-serif;color:var(--text);min-height:100vh;padding-bottom:80px;}
+
+/* ECRAN CONNEXION */
+#login-screen{
+  position:fixed;inset:0;background:#0a0f16;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+#login-screen .login-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:72px;
+  background:linear-gradient(135deg,var(--orange),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:8px;line-height:1;margin-bottom:4px;
+}
+#login-screen .login-sub{
+  font-size:11px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:40px;
+}
+#login-screen .login-card{
+  background:var(--mid);border-radius:16px;padding:24px;
+  width:100%;max-width:360px;border:1px solid rgba(255,255,255,0.08);
+}
+#login-screen .login-title{
+  font-size:13px;font-weight:900;letter-spacing:2px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:16px;
+  text-align:center;
+}
+#login-error{
+  background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+  color:#fca5a5;border-radius:8px;padding:8px 12px;
+  font-size:12px;margin-bottom:12px;display:none;text-align:center;
+}
+#loading-screen{
+  position:fixed;inset:0;background:#0a0f16;z-index:9998;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+#loading-screen .ls-logo{
+  font-family:'Bebas Neue',sans-serif;font-size:56px;
+  background:linear-gradient(135deg,var(--orange),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:6px;
+}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,210,0,0.2);
+  border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--orange),var(--gold));padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.header .brand{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--dark);letter-spacing:4px;}
+.header .hdate{font-size:10px;font-weight:700;color:rgba(13,27,42,0.6);text-align:right;letter-spacing:1px;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:1px solid rgba(255,255,255,0.07);display:flex;z-index:50;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;gap:3px;transition:color 0.2s;}
+.nav-item .nav-ico{font-size:20px;}
+.nav-item.active{color:var(--gold);}
+
+/* PAGES */
+.page{display:none;padding:14px 14px 0;}
+.page.active{display:block;}
+
+/* CARDS */
+.card{background:var(--mid);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.05);margin-bottom:10px;}
+.card-title{font-size:10px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+.stat-box{background:var(--mid);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.05);text-align:center;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:2px;line-height:1;}
+.stat-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+.stat-sub{font-size:10px;color:var(--green);font-weight:600;margin-top:2px;}
+
+/* BUTTONS */
+.btn{border:none;border-radius:8px;padding:9px 14px;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;cursor:pointer;letter-spacing:0.5px;transition:opacity 0.2s;}
+.btn:hover{opacity:0.85;}
+.btn-gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:var(--dark);}
+.btn-outline{background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.25);color:var(--gold);}
+.btn-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);}
+.btn-green{background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:var(--green);}
+.btn-full{width:100%;display:block;text-align:center;padding:12px;}
+
+/* FORM */
+.form-group{margin-bottom:12px;}
+.form-label{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(255,210,0,0.4);}
+.form-select option{background:var(--dark);}
+.form-textarea{resize:vertical;min-height:70px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* LIST ITEMS */
+.list-item{background:var(--card);border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:10px;}
+.list-item:hover{border-color:rgba(255,210,0,0.15);}
+.item-ico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.item-info{flex:1;min-width:0;}
+.item-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.item-actions{display:flex;gap:5px;flex-shrink:0;}
+.icon-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:5px 8px;cursor:pointer;font-size:13px;color:var(--muted);}
+
+/* STATUS BADGES */
+.badge{font-size:9px;font-weight:900;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:1px;display:inline-block;}
+.badge-pending{background:rgba(249,115,22,0.15);color:#f97316;}
+.badge-progress{background:rgba(59,130,246,0.15);color:var(--blue);}
+.badge-done{background:rgba(37,211,102,0.15);color:var(--green);}
+.badge-delivered{background:rgba(139,92,246,0.15);color:var(--purple);}
+
+/* STOCK BAR */
+.stock-bar-wrap{margin-top:6px;}
+.stock-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;}
+.stock-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--dark);border-radius:20px 20px 0 0;padding:20px 16px 30px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.08);}
+.modal-handle{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);letter-spacing:3px;margin-bottom:16px;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+
+/* CATALOGUE TABLE */
+.cat-table{width:100%;border-collapse:collapse;}
+.cat-table th{font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);}
+.cat-table td{font-size:12px;padding:8px 8px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);}
+.cat-table td:last-child{color:var(--gold);font-weight:700;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;}
+.cat-section-header{background:rgba(255,210,0,0.06);font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:6px 8px;}
+
+/* BILAN */
+.bilan-section{margin-bottom:16px;}
+.bilan-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.bilan-row .bl-label{font-size:12px;color:var(--muted);}
+.bilan-row .bl-val{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;}
+.bilan-total{background:linear-gradient(135deg,rgba(247,151,30,0.1),rgba(255,210,0,0.1));border:1px solid rgba(255,210,0,0.2);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.bilan-total .bt-label{font-size:12px;font-weight:700;color:var(--text);}
+.bilan-total .bt-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);letter-spacing:2px;}
+
+/* RECOMMENDATION CARD */
+.reco-card{background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.reco-title{font-size:11px;font-weight:900;color:var(--purple);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.reco-text{font-size:12px;color:var(--text);line-height:1.6;}
+
+/* ALERT */
+.alert{border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;font-weight:600;}
+.alert-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;}
+.alert-orange{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:#fdba74;}
+
+/* SEARCH */
+.search-bar{background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:9px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:12px;}
+.search-bar::placeholder{color:var(--muted);}
+
+/* TABS MINI */
+.mini-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.mini-tab{padding:6px 12px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:var(--card);color:var(--muted);border:1px solid rgba(255,255,255,0.06);white-space:nowrap;transition:all 0.2s;}
+.mini-tab.active{background:rgba(255,210,0,0.12);border-color:rgba(255,210,0,0.3);color:var(--gold);}
+
+.empty{text-align:center;padding:30px 16px;color:var(--muted);}
+.empty .eico{font-size:36px;margin-bottom:8px;}
+.empty p{font-size:12px;line-height:1.6;}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.section-head h2{font-size:10px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--gold);}
+
+/* WA MSG bubble */
+.wa-bubble{background:#DCF8C6;color:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:12px;line-height:1.7;white-space:pre-wrap;margin:10px 0;position:relative;}
+.wa-bubble::before{content:'';position:absolute;top:0;left:-7px;width:0;height:0;border-top:7px solid #DCF8C6;border-left:7px solid transparent;}
+</style>
+</head>
+<body>
+
+<!-- ECRAN CHARGEMENT -->
+<div id="loading-screen">
+  <div class="ls-logo">SLG</div>
+  <div class="spinner"></div>
+  <div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;">Chargement...</div>
+</div>
+
+<!-- ECRAN CONNEXION -->
+<div id="login-screen" style="display:none;">
+  <div class="login-logo">SLG</div>
+  <div class="login-sub">Kandi • Alibori • Bénin</div>
+  <div class="login-card">
+    <div class="login-title">🔐 Connexion</div>
+    <div id="login-error"></div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="login-email" type="email" placeholder="votre@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-gold btn-full" style="margin-top:8px;" onclick="doLogin()">Se connecter</button>
+  </div>
+  <div style="margin-top:20px;font-size:10px;color:var(--muted);text-align:center;letter-spacing:1px;">
+    SLG — Gestion Complète v1.0
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="brand">SLG</div>
+    <div style="font-size:9px;font-weight:800;color:rgba(13,27,42,0.55);letter-spacing:1px;text-transform:uppercase;">Gestion Complète</div>
+  </div>
+  <div class="hdate" id="hdate"></div>
+</div>
+
+<!-- ===== PAGE: TABLEAU DE BORD ===== -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num" id="db-recettes">0</div>
+      <div class="stat-label">Recettes aujourd'hui</div>
+      <div class="stat-sub" id="db-recettes-sub">0 FCFA</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-commandes">0</div>
+      <div class="stat-label">Commandes</div>
+      <div class="stat-sub" id="db-cmd-sub">En cours</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-contacts">0</div>
+      <div class="stat-label">Contacts</div>
+      <div class="stat-sub">Total</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-stock-alert">0</div>
+      <div class="stat-label">Alertes stock</div>
+      <div class="stat-sub" style="color:var(--red);">À réapprovisionner</div>
+    </div>
+  </div>
+
+  <!-- Alertes stock -->
+  <div id="stock-alerts-db"></div>
+
+  <!-- Commandes récentes -->
+  <div class="card">
+    <div class="card-title">Commandes récentes</div>
+    <div id="recent-orders"></div>
+  </div>
+
+  <!-- Recettes du jour -->
+  <div class="card">
+    <div class="card-title">Caisse du jour</div>
+    <div id="today-caisse"></div>
+    <button class="btn btn-gold btn-full" style="margin-top:10px;" onclick="openRecetteModal(null)">+ Enregistrer une recette</button>
+  </div>
+</div>
+
+<!-- ===== PAGE: CONTACTS ===== -->
+<div class="page" id="page-contacts">
+  <div class="section-head">
+    <h2>Contacts</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-contact')">+ Ajouter</button>
+  </div>
+  <input class="search-bar" placeholder="🔍 Rechercher..." oninput="renderContacts(this.value)">
+  <div class="mini-tabs">
+    <div class="mini-tab active" onclick="filterContacts('tous',this)">Tous</div>
+    <div class="mini-tab" onclick="filterContacts('vip',this)">⭐ VIP</div>
+    <div class="mini-tab" onclick="filterContacts('kandi',this)">📍 Kandi</div>
+    <div class="mini-tab" onclick="filterContacts('hors',this)">🚌 Hors Kandi</div>
+    <div class="mini-tab" onclick="filterContacts('villageois',this)">🌾 Villageois</div>
+    <div class="mini-tab" onclick="filterContacts('eleve',this)">📚 Élèves</div>
+    <div class="mini-tab" onclick="filterContacts('prospect',this)">🎯 Prospects</div>
+  </div>
+  <div id="contacts-list"></div>
+</div>
+
+<!-- ===== PAGE: COMMANDES ===== -->
+<div class="page" id="page-commandes">
+  <div class="section-head">
+    <h2>Commandes</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-commande')">+ Nouvelle</button>
+  </div>
+  <div class="mini-tabs">
+    <div class="mini-tab active" onclick="filterOrders('tous',this)">Toutes</div>
+    <div class="mini-tab" onclick="filterOrders('en_attente',this)">⏳ Attente</div>
+    <div class="mini-tab" onclick="filterOrders('en_cours',this)">🔄 En cours</div>
+    <div class="mini-tab" onclick="filterOrders('termine',this)">✅ Terminé</div>
+    <div class="mini-tab" onclick="filterOrders('livre',this)">📦 Livré</div>
+  </div>
+  <div id="orders-list"></div>
+</div>
+
+<!-- ===== PAGE: STOCK ===== -->
+<div class="page" id="page-stock">
+  <div class="section-head">
+    <h2>Matières Premières</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-stock')">+ Ajouter</button>
+  </div>
+  <div id="stock-alerts"></div>
+  <div id="stock-list"></div>
+</div>
+
+<!-- ===== PAGE: CATALOGUE ===== -->
+<div class="page" id="page-catalogue">
+  <div class="card-title" style="padding:4px 0 10px;">Catalogue des Prix SLG</div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="cat-table">
+      <thead><tr><th>Service</th><th>Prix</th><th>Coût</th><th>Marge</th></tr></thead>
+      <tbody id="catalogue-body"></tbody>
+    </table>
+  </div>
+  <button class="btn btn-outline btn-full" onclick="openModal('modal-cat-item')">+ Ajouter un service</button>
+</div>
+
+<!-- ===== PAGE: BILAN ===== -->
+<div class="page" id="page-bilan">
+  <div class="section-head">
+    <h2>Bilan Mensuel</h2>
+    <select class="form-select" id="bilan-month" onchange="renderBilan()" style="width:auto;padding:6px 10px;font-size:12px;"></select>
+  </div>
+  <div id="bilan-content"></div>
+</div>
+
+<!-- ===== PAGE: WHATSAPP ===== -->
+<div class="page" id="page-wa">
+  <div class="card-title" style="padding:4px 0 10px;">Messages WhatsApp</div>
+  <div class="mini-tabs">
+    <div class="mini-tab active" onclick="showWaMsg('kandi',this)">📍 Kandi</div>
+    <div class="mini-tab" onclick="showWaMsg('hors',this)">🚌 Hors Kandi</div>
+    <div class="mini-tab" onclick="showWaMsg('villageois',this)">🌾 Villageois</div>
+    <div class="mini-tab" onclick="showWaMsg('eleve',this)">📚 Élèves</div>
+    <div class="mini-tab" onclick="showWaMsg('vip',this)">⭐ VIP</div>
+    <div class="mini-tab" onclick="showWaMsg('prospect',this)">🎯 Prospect</div>
+    <div class="mini-tab" onclick="showWaMsg('lancement',this)">🎉 Lancement</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Aperçu du message</div>
+    <div class="wa-bubble" id="wa-preview"></div>
+    <button class="btn btn-green btn-full" onclick="copyWaMsg()">📋 Copier le message</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Envoyer à un contact</div>
+    <select class="form-select" id="wa-contact-select" style="margin-bottom:10px;">
+      <option value="">-- Choisir un contact --</option>
+    </select>
+    <button class="btn btn-green btn-full" onclick="sendWa()">📲 Ouvrir WhatsApp</button>
+  </div>
+</div>
+
+<!-- =============== MODALS =============== -->
+
+<!-- Modal Recette Simple (sans commande) -->
+<div class="modal-overlay" id="modal-recette">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>💵 Recette du jour</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">Pour les petits services payés cash : photocopie, photo identité, saisie... <strong style="color:var(--gold)">Sans commande associée.</strong></p>
+    <div class="form-group">
+      <label class="form-label">Service *</label>
+      <select class="form-select" id="r-desc" onchange="onRecetteServiceChange()">
+        <option value="">-- Choisir un service --</option>
+      </select>
+      <input class="form-input" id="r-desc-custom" type="text" placeholder="Saisir le service..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Montant reçu (FCFA) *</label>
+      <input class="form-input" id="r-amount" type="number" placeholder="Ex: 500">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Client (optionnel)</label>
+      <select class="form-select" id="r-client" onchange="onRecetteClientChange()">
+        <option value="">-- Choisir un contact --</option>
+      </select>
+      <input class="form-input" id="r-client-custom" type="text" placeholder="Saisir le nom du client..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-recette')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveRecette()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Encaissement Commande -->
+<div class="modal-overlay" id="modal-encaissement">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>💰 Encaisser</h3>
+    <input type="hidden" id="enc-cmd-id">
+    <div id="enc-cmd-info" style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.2);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text);line-height:1.7;"></div>
+    <div class="form-group">
+      <label class="form-label">Montant encaissé (FCFA) *</label>
+      <input class="form-input" id="enc-amount" type="number" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nouveau statut</label>
+      <select class="form-select" id="enc-statut">
+        <option value="en_cours">🔄 En cours</option>
+        <option value="termine">✅ Terminé</option>
+        <option value="livre">📦 Livré</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-encaissement')">Annuler</button>
+      <button class="btn btn-green" style="flex:1" onclick="saveEncaissement()">💰 Encaisser</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Charges -->
+<div class="modal-overlay" id="modal-charge">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-charge-title">Nouvelle Charge</h3>
+    <input type="hidden" id="ch-id">
+    <div class="form-group">
+      <label class="form-label">Nom de la charge *</label>
+      <input class="form-input" id="ch-name" placeholder="Ex: Loyer, Électricité...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Montant mensuel (FCFA) *</label>
+        <input class="form-input" id="ch-montant" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catégorie</label>
+        <select class="form-select" id="ch-categorie">
+          <option value="fixe">Charge fixe</option>
+          <option value="variable">Charge variable</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-charge')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCharge()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-contact-title">Nouveau Contact</h3>
+    <input type="hidden" id="c-id">
+    <div class="form-group">
+      <label class="form-label">Nom complet *</label>
+      <input class="form-input" id="c-name" placeholder="Ex: Moussa Amadou">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Téléphone *</label>
+        <input class="form-input" id="c-phone" type="tel" placeholder="0196000000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ville / Village</label>
+        <select class="form-select" id="c-city" onchange="onCityChange()">
+          <option value="">-- Choisir --</option>
+          <optgroup label="📍 Commune de Kandi">
+            <option>Kandi</option>
+            <option>Angaradébou</option>
+            <option>Bensékou</option>
+            <option>Donwari</option>
+            <option>Kassakou</option>
+            <option>Saah</option>
+            <option>Sam</option>
+            <option>Sonsoro</option>
+            <option>Gansosso</option>
+            <option>Alfakoara</option>
+            <option>Kpalolo</option>
+            <option>Soundou</option>
+            <option>Sidérou</option>
+            <option>Tissarou</option>
+          </optgroup>
+          <optgroup label="🌾 Commune de Banikoara">
+            <option>Banikoara</option>
+            <option>Founougo</option>
+            <option>Gomparou</option>
+            <option>Goumori</option>
+            <option>Kokey</option>
+            <option>Kokiborou</option>
+            <option>Ounet</option>
+            <option>Sompérékou</option>
+            <option>Soroko</option>
+            <option>Toura</option>
+          </optgroup>
+          <optgroup label="🌾 Commune de Gogounou">
+            <option>Gogounou</option>
+            <option>Bagou</option>
+            <option>Gounarou</option>
+            <option>Ouara</option>
+            <option>Sori</option>
+            <option>Zoungou-Pantrossi</option>
+          </optgroup>
+          <optgroup label="🌾 Commune de Malanville">
+            <option>Malanville</option>
+            <option>Garou</option>
+            <option>Guéné</option>
+            <option>Madécali</option>
+            <option>Toumboutou</option>
+            <option>Monkassa</option>
+            <option>Goun-Goun</option>
+          </optgroup>
+          <optgroup label="🌾 Commune de Ségbana">
+            <option>Ségbana</option>
+            <option>Liboussou</option>
+            <option>Lougou</option>
+            <option>Sokotindji</option>
+          </optgroup>
+          <optgroup label="🌾 Commune de Karimama">
+            <option>Karimama</option>
+            <option>Bogo-Bogo</option>
+            <option>Kompa</option>
+            <option>Monsey</option>
+            <option>Birni Lafia</option>
+          </optgroup>
+          <optgroup label="🏙️ Autres villes du Bénin">
+            <option>Bembéréké</option>
+            <option>Nikki</option>
+            <option>Parakou</option>
+            <option>Ndali</option>
+            <option>Pèrèrè</option>
+            <option>Tchaourou</option>
+            <option>Djougou</option>
+            <option>Natitingou</option>
+            <option>Cotonou</option>
+            <option>Porto-Novo</option>
+            <option>Abomey-Calavi</option>
+          </optgroup>
+          <option value="Autre">✏️ Autre (saisir manuellement)</option>
+        </select>
+        <input class="form-input" id="c-city-custom" type="text" placeholder="Saisir le village / la ville..." style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catégorie *</label>
+      <select class="form-select" id="c-cat">
+        <option value="kandi">📍 Client à Kandi</option>
+        <option value="hors">🚌 Client hors Kandi</option>
+        <option value="villageois">🌾 Villageois</option>
+        <option value="eleve">📚 Élève / Étudiant</option>
+        <option value="vip">⭐ VIP / Fidèle</option>
+        <option value="prospect">🎯 Prospect</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dernier service</label>
+      <input class="form-input" id="c-service" placeholder="Ex: Logo, T-shirt...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <input class="form-input" id="c-note" placeholder="Note libre...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-contact')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveContact()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Commande -->
+<div class="modal-overlay" id="modal-commande">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-cmd-title">Nouvelle Commande</h3>
+    <input type="hidden" id="cmd-id">
+    <div class="form-group">
+      <label class="form-label">Client *</label>
+      <select class="form-select" id="cmd-client">
+        <option value="">-- Choisir un contact --</option>
+      </select>
+      <input class="form-input" id="cmd-client-custom" type="text" placeholder="Saisir le nom du client..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Service commandé *</label>
+      <select class="form-select" id="cmd-service">
+        <option value="">-- Choisir un service --</option>
+      </select>
+      <input class="form-input" id="cmd-service-custom" type="text" placeholder="Saisir le service..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Montant (FCFA)</label>
+        <input class="form-input" id="cmd-montant" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coût variable (FCFA)</label>
+        <input class="form-input" id="cmd-cout" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Avance (FCFA)</label>
+        <input class="form-input" id="cmd-avance" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date de livraison</label>
+        <input class="form-input" id="cmd-deadline" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Statut</label>
+      <select class="form-select" id="cmd-statut">
+        <option value="en_attente">⏳ En attente</option>
+        <option value="en_cours">🔄 En cours</option>
+        <option value="termine">✅ Terminé</option>
+        <option value="livre">📦 Livré</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <textarea class="form-textarea" id="cmd-note" placeholder="Détails, instructions..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-commande')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCommande()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Stock -->
+<div class="modal-overlay" id="modal-stock">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-stock-title">Matière Première</h3>
+    <input type="hidden" id="s-id">
+    <div class="form-group">
+      <label class="form-label">Nom *</label>
+      <input class="form-input" id="s-name" placeholder="Ex: Mugs blancs">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Unité</label>
+      <input class="form-input" id="s-unit" placeholder="Ex: pcs, ramettes, litres...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantité actuelle *</label>
+        <input class="form-input" id="s-qty" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seuil d'alerte</label>
+        <input class="form-input" id="s-alert" type="number" placeholder="5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prix unitaire (FCFA)</label>
+      <input class="form-input" id="s-price" type="number" placeholder="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-stock')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveStock()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Catalogue Item -->
+<div class="modal-overlay" id="modal-cat-item">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Nouveau Service</h3>
+    <div class="form-group">
+      <label class="form-label">Catégorie</label>
+      <input class="form-input" id="ci-cat" placeholder="Ex: Impression, Photo...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom du service *</label>
+      <input class="form-input" id="ci-name" placeholder="Ex: T-shirt personnalisé">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Détail</label>
+      <input class="form-input" id="ci-detail" placeholder="Ex: Presse à chaud, 1 face">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prix de vente (FCFA) *</label>
+        <input class="form-input" id="ci-price" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coût variable (FCFA)</label>
+        <input class="form-input" id="ci-cost" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Unité</label>
+      <input class="form-input" id="ci-unit" placeholder="Ex: /page, /m², /pcs">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-cat-item')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCatItem()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Commande Detail -->
+<div class="modal-overlay" id="modal-cmd-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Détail Commande</h3>
+    <div id="cmd-detail-content"></div>
+    <div class="modal-actions" id="cmd-detail-actions"></div>
+  </div>
+</div>
+
+<!-- Modal Stock Ajustement -->
+<div class="modal-overlay" id="modal-stock-adj">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Ajuster le stock</h3>
+    <input type="hidden" id="sadj-id">
+    <div class="form-group">
+      <label class="form-label" id="sadj-name-label">Matière</label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nouvelle quantité</label>
+      <input class="form-input" id="sadj-qty" type="number" placeholder="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-stock-adj')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveStockAdj()">Mettre à jour</button>
+    </div>
+  </div>
+</div>
+
+<!-- =============== BOTTOM NAV =============== -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="showPage('dashboard',this)">
+    <span class="nav-ico">🏠</span>Accueil
+  </div>
+  <div class="nav-item" onclick="showPage('contacts',this)">
+    <span class="nav-ico">👥</span>Contacts
+  </div>
+  <div class="nav-item" onclick="showPage('commandes',this)">
+    <span class="nav-ico">📋</span>Commandes
+  </div>
+  <div class="nav-item" onclick="showPage('stock',this)">
+    <span class="nav-ico">📦</span>Stock
+  </div>
+  <div class="nav-item" onclick="showPage('catalogue',this)">
+    <span class="nav-ico">🏷️</span>Prix
+  </div>
+  <div class="nav-item" onclick="showPage('bilan',this)">
+    <span class="nav-ico">📊</span>Bilan
+  </div>
+  <div class="nav-item" onclick="showPage('wa',this)">
+    <span class="nav-ico">💬</span>WhatsApp
+  </div>
+</div>
+
+<!-- Firebase compat (pas besoin de import, accessible globalement) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+// ==================== FIREBASE ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyBaONRrGGDmWrw5ImzUCvPTF8UHIofGeAI",
+  authDomain: "slg-kandi.firebaseapp.com",
+  databaseURL: "https://slg-kandi-default-rtdb.firebaseio.com",
+  projectId: "slg-kandi",
+  storageBucket: "slg-kandi.firebasestorage.app",
+  messagingSenderId: "778728074415",
+  appId: "1:778728074415:web:239d1da686e6f644cdf85a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const auth = firebase.auth();
+
+// Rôles admin
+const ADMINS = ['tmcu16@gmail.com','peuguya@gmail.com'];
+let currentUser = null;
+let isAdmin = false;
+
+function showLoginScreen() {
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.querySelector('.header') && hideApp();
+}
+
+function hideApp() {
+  document.querySelector('.header').style.display='none';
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.querySelector('.bottom-nav').style.display='none';
+  const ss = document.getElementById('sync-status');
+  if(ss) ss.style.display='none';
+}
+
+function showApp() {
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.querySelector('.header').style.display='';
+  document.querySelector('.bottom-nav').style.display='';
+  document.querySelector('#page-dashboard').style.display='block';
+  const ss = document.getElementById('sync-status');
+  if(ss) ss.style.display='';
+  // Masquer bilan si pas admin
+  if(!isAdmin) {
+    document.querySelector('[onclick="showPage(\'bilan\',this)"]').style.display='none';
+  }
+  renderDashboard();
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errDiv = document.getElementById('login-error');
+  errDiv.style.display='none';
+  if(!email||!password){errDiv.textContent='Email et mot de passe requis.';errDiv.style.display='block';return;}
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(function(err){
+      errDiv.textContent = err.code==='auth/wrong-password'||err.code==='auth/user-not-found'
+        ? '❌ Email ou mot de passe incorrect.'
+        : '❌ Erreur de connexion. Vérifiez votre connexion internet.';
+      errDiv.style.display='block';
+    });
+}
+
+function doLogout() {
+  if(!confirm('Se déconnecter ?')) return;
+  auth.signOut();
+}
+
+// Surveiller l'état de connexion
+auth.onAuthStateChanged(function(user) {
+  if(user) {
+    currentUser = user;
+    isAdmin = ADMINS.includes(user.email);
+    // Mettre à jour le header avec le nom
+    const role = isAdmin ? (user.email==='tmcu16@gmail.com'?'Dir. Technique':'Directrice') : 'Associé';
+    document.getElementById('hdate').innerHTML =
+      todayLabel()+'<br>'+
+      '<span style="font-size:9px">👤 '+role+' • <span onclick="doLogout()" style="color:var(--dark);text-decoration:underline;cursor:pointer">Déconnexion</span></span>';
+    showApp();
+    // Charger les données
+    database.ref('slg').on('value', function(snapshot) {
+      const data = snapshot.val();
+      if(data) {
+        DB.contacts   = data.contacts   ? Object.values(data.contacts)   : [];
+        DB.commandes  = data.commandes  ? Object.values(data.commandes)  : [];
+        DB.recettes   = data.recettes   ? Object.values(data.recettes)   : [];
+        DB.stock      = data.stock      ? Object.values(data.stock)      : DEFAULT_STOCK;
+        DB.catalogue  = data.catalogue  ? Object.values(data.catalogue)  : DEFAULT_CATALOGUE;
+        DB.charges    = data.charges    ? Object.values(data.charges)    : DEFAULT_CHARGES;
+      }
+      showSyncStatus('🔄 Synchronisé', 'var(--green)');
+      renderDashboard();
+    });
+  } else {
+    currentUser = null;
+    isAdmin = false;
+    showLoginScreen();
+  }
+});
+
+// Indicateur de sync
+function showSyncStatus(msg, color) {
+  color = color || 'var(--gold)';
+  let el = document.getElementById('sync-status');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'sync-status';
+    el.style.cssText = 'position:fixed;top:70px;right:12px;background:var(--mid);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 12px;font-size:10px;font-weight:700;letter-spacing:1px;z-index:999;transition:opacity 0.5s;';
+    document.body.appendChild(el);
+  }
+  el.style.color = color;
+  el.style.opacity = '1';
+  el.textContent = msg;
+  setTimeout(function(){ el.style.opacity = '0'; }, 3000);
+}
+
+// ==================== DATA ====================
+const DEFAULT_STOCK = [
+  {id:'s1',name:'Encres sublimation',unit:'flacons',qty:3,alert:2,price:5000},
+  {id:'s2',name:'Papier sublimation',unit:'feuilles',qty:50,alert:20,price:100},
+  {id:'s3',name:'Mugs blancs',unit:'pcs',qty:12,alert:5,price:500},
+  {id:'s4',name:'T-shirts vierges',unit:'pcs',qty:8,alert:5,price:1500},
+  {id:'s5',name:'Plaques porte-clés',unit:'pcs',qty:20,alert:10,price:200},
+  {id:'s6',name:'Papier A4',unit:'ramettes',qty:4,alert:2,price:2500},
+  {id:'s7',name:'Cartouches imprimante',unit:'pcs',qty:2,alert:1,price:8000},
+];
+
+const DEFAULT_CATALOGUE = [
+  {id:'c1',cat:'Impression & Documents',name:'Photocopie N&B',detail:'Format A4',price:25,unit:'/page',cost:8},
+  {id:'c2',cat:'Impression & Documents',name:'Impression N&B',detail:'Document texte',price:50,unit:'/page',cost:12},
+  {id:'c3',cat:'Impression & Documents',name:'Impression couleur',detail:'Format A4',price:150,unit:'/page',cost:50},
+  {id:'c4',cat:'Impression & Documents',name:'Saisie document',detail:'Par page rédigée',price:200,unit:'/page',cost:0},
+  {id:'c5',cat:'Impression & Documents',name:'Scan',detail:'Numérisation',price:100,unit:'/page',cost:0},
+  {id:'c6',cat:'Photo & Portraits',name:'Photo identité',detail:'4 photos imprimées',price:500,unit:'',cost:100},
+  {id:'c7',cat:'Photo & Portraits',name:'Portrait individuel',detail:'Tirage 10x15',price:500,unit:'',cost:80},
+  {id:'c8',cat:'Photo & Portraits',name:'Photo de famille',detail:'Tirage A4',price:1000,unit:'',cost:150},
+  {id:'c9',cat:'Photo & Portraits',name:'Tableau photo encadré',detail:'Format 30x40',price:3500,unit:'',cost:1200},
+  {id:'c10',cat:'Personnalisation',name:'T-shirt personnalisé',detail:'Presse à chaud, 1 face',price:2500,unit:'',cost:900},
+  {id:'c11',cat:'Personnalisation',name:'Tasse personnalisée',detail:'Photo + texte',price:2000,unit:'',cost:600},
+  {id:'c12',cat:'Personnalisation',name:'Porte-clé',detail:'Photo ou logo',price:500,unit:'',cost:150},
+  {id:'c13',cat:'Services Pro',name:'Carte de visite',detail:'Lot de 100',price:3000,unit:'',cost:800},
+  {id:'c14',cat:'Services Pro',name:'Facturier',detail:'50 feuillets',price:2500,unit:'',cost:700},
+  {id:'c15',cat:'Services Pro',name:'Cachet / Tampon',detail:'Sur mesure',price:5000,unit:'',cost:2000},
+  {id:'c16',cat:'Services Pro',name:'Maintenance informatique',detail:'Diagnostic & dépannage',price:2000,unit:'+',cost:0},
+  {id:'c17',cat:'Conception Graphique',name:'Logo simple',detail:'1 concept',price:7000,unit:'',cost:0},
+  {id:'c18',cat:'Conception Graphique',name:'Logo professionnel',detail:'Plusieurs variantes',price:20000,unit:'',cost:0},
+  {id:'c19',cat:'Conception Graphique',name:'Affiche / Flyer',detail:'Conception & mise en page',price:5000,unit:'',cost:0},
+  {id:'c20',cat:'Conception Graphique',name:"Carte d'invitation",detail:'Mariage, baptême, événement',price:5000,unit:'',cost:0},
+  {id:'c21',cat:'Conception Graphique',name:'Maquette document',detail:'Rapport, brochure, dossier',price:15000,unit:'',cost:0},
+  {id:'c22',cat:'Conception Graphique',name:'Montage photo',detail:'Retouche, composition',price:7000,unit:'',cost:0},
+  {id:'c23',cat:'Impression Grand Format',name:'A0 / Bannière',detail:'Haute résolution',price:5000,unit:'',cost:1500},
+  {id:'c24',cat:'Impression Grand Format',name:'Bâche publicitaire',detail:'Impression plein air',price:5000,unit:'/m²',cost:2000},
+  {id:'c25',cat:'Impression Grand Format',name:'Roll-up complet',detail:'Impression + structure',price:35000,unit:'',cost:15000},
+];
+
+const DEFAULT_CHARGES = [
+  {id:'ch1', name:'Loyer',                  montant:30000, categorie:'fixe'},
+  {id:'ch2', name:'Électricité',            montant:10000, categorie:'fixe'},
+  {id:'ch3', name:'Communication',          montant:7000,  categorie:'fixe'},
+  {id:'ch4', name:'Eau',                    montant:2000,  categorie:'fixe'},
+  {id:'ch5', name:'Salaire / Main d\'œuvre',montant:50000, categorie:'fixe'},
+  {id:'ch6', name:'Transport',              montant:5000,  categorie:'fixe'},
+];
+
+let DB = {
+  contacts: [], commandes: [], stock: DEFAULT_STOCK,
+  recettes: [], catalogue: DEFAULT_CATALOGUE,
+  charges: DEFAULT_CHARGES,
+};
+
+// Sauvegarder vers Firebase
+function save() {
+  var toObj = function(arr){ return arr.reduce(function(o,i){ o[i.id]=i; return o; }, {}); };
+  database.ref('slg').set({
+    contacts:  toObj(DB.contacts),
+    commandes: toObj(DB.commandes),
+    recettes:  toObj(DB.recettes),
+    stock:     toObj(DB.stock),
+    catalogue: toObj(DB.catalogue),
+    charges:   toObj(DB.charges),
+  }).then(function(){ showSyncStatus('✅ Sauvegardé', 'var(--green)'); })
+    .catch(function(){ showSyncStatus('⚠️ Erreur sync', 'var(--red)'); });
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function fmt(n) { return Number(n||0).toLocaleString('fr-FR') + ' F'; }
+function today() { return new Date().toISOString().slice(0,10); }
+function todayLabel() {
+  return new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ==================== NAV ====================
+function showPage(p, el) {
+  if((p==='bilan') && !isAdmin){alert('❌ Accès réservé aux administrateurs.');return;}
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(el) el.classList.add('active');
+  if(p==='dashboard') renderDashboard();
+  if(p==='contacts') renderContacts('');
+  if(p==='commandes') renderOrders('tous');
+  if(p==='stock') renderStock();
+  if(p==='catalogue') renderCatalogue();
+  if(p==='bilan') { populateBilanMonths(); renderBilan(); }
+  if(p==='wa') { renderWaContactSelect(); showWaMsg('kandi'); }
+}
+
+// ==================== MODAL ====================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e){ if(e.target===this) closeModal(this.id); });
+});
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const todayStr = today();
+  const todayRecettes = DB.recettes.filter(r => r.date === todayStr);
+  const totalToday = todayRecettes.reduce((s,r) => s + Number(r.amount), 0);
+  const cmdEnCours = DB.commandes.filter(c => c.statut === 'en_cours' || c.statut === 'en_attente').length;
+  const stockAlerts = DB.stock.filter(s => Number(s.qty) <= Number(s.alert)).length;
+
+  document.getElementById('db-recettes').textContent = todayRecettes.length;
+  document.getElementById('db-recettes-sub').textContent = fmt(totalToday);
+  document.getElementById('db-commandes').textContent = cmdEnCours;
+  document.getElementById('db-cmd-sub').textContent = cmdEnCours + ' en cours';
+  document.getElementById('db-contacts').textContent = DB.contacts.length;
+  document.getElementById('db-stock-alert').textContent = stockAlerts;
+
+  // Stock alerts
+  const alertDiv = document.getElementById('stock-alerts-db');
+  const lowStock = DB.stock.filter(s => Number(s.qty) <= Number(s.alert));
+  alertDiv.innerHTML = lowStock.map(s =>
+    `<div class="alert alert-${Number(s.qty)===0?'red':'orange'}">⚠️ <strong>${s.name}</strong> — Stock faible : ${s.qty} ${s.unit} restant(s)</div>`
+  ).join('');
+
+  // Recent orders
+  const recentDiv = document.getElementById('recent-orders');
+  const recent = [...DB.commandes].sort((a,b) => b.created - a.created).slice(0,5);
+  if(!recent.length) { recentDiv.innerHTML = '<div class="empty"><p>Aucune commande encore.</p></div>'; }
+  else recentDiv.innerHTML = recent.map(c => orderCard(c)).join('');
+
+  // Today caisse
+  const caisseDiv = document.getElementById('today-caisse');
+  if(!todayRecettes.length) { caisseDiv.innerHTML = '<div class="empty"><p>Aucune recette enregistrée aujourd\'hui.</p></div>'; }
+  else caisseDiv.innerHTML = todayRecettes.map(r =>
+    `<div class="bilan-row" style="align-items:center;">
+      <span class="bl-label" style="flex:1">${r.desc}${r.client?' — '+r.client:''}${r.cmdId?' 🔗':''}</span>
+      <span class="bl-val" style="color:var(--green);margin-right:8px">${fmt(r.amount)}</span>
+      <button onclick="deleteRecette('${r.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;flex-shrink:0">🗑️</button>
+    </div>`
+  ).join('') + `<div class="bilan-total" style="margin-top:8px;"><span class="bt-label">Total du jour</span><span class="bt-val">${fmt(totalToday)}</span></div>`;
+}
+
+// ==================== SECURITE PIN ====================
+const ADMIN_PIN = '0000';
+function checkPin(action) {
+  if(!isAdmin){alert('❌ Action réservée aux administrateurs.');return false;}
+  const pin = prompt('🔐 Code PIN requis pour ' + action + ' :');
+  if(pin === null) return false;
+  if(pin !== ADMIN_PIN) {
+    alert('❌ Code PIN incorrect.');
+    return false;
+  }
+  return true;
+}
+
+// ==================== RECETTES ====================
+function deleteRecette(id) {
+  if(!checkPin('supprimer cette recette')) return;
+  DB.recettes = DB.recettes.filter(r => r.id !== id);
+  save();
+  renderDashboard();
+}
+
+function openRecetteModal(cmdId) {
+  if(cmdId) {
+    // Mode encaissement depuis commande
+    const cmd = DB.commandes.find(c=>c.id===cmdId); if(!cmd) return;
+    const reste = Number(cmd.montant||0) - Number(cmd.avance||0);
+    document.getElementById('enc-cmd-id').value = cmdId;
+    document.getElementById('enc-amount').value = reste > 0 ? reste : '';
+    document.getElementById('enc-statut').value = reste <= 0 ? 'livre' : 'termine';
+    document.getElementById('enc-cmd-info').innerHTML =
+      '<strong>'+cmd.client+'</strong> — '+cmd.service+'<br>'+
+      'Total : <span style="color:var(--gold)">'+fmt(cmd.montant)+'</span> | '+
+      'Avance : <span style="color:var(--green)">'+fmt(cmd.avance)+'</span> | '+
+      'Reste : <span style="color:'+(reste>0?'var(--red)':'var(--green)')+'">'+fmt(reste)+'</span>';
+    openModal('modal-encaissement');
+  } else {
+    // Mode recette simple sans commande
+    const serviceSel = document.getElementById('r-desc');
+    const cats = [...new Set(DB.catalogue.map(c=>c.cat))];
+    let opts = '<option value="">-- Choisir un service --</option>';
+    cats.forEach(cat => {
+      opts += '<optgroup label="'+cat+'">';
+      DB.catalogue.filter(c=>c.cat===cat).forEach(c => {
+        opts += '<option value="'+c.name+'">'+c.name+' — '+c.price.toLocaleString('fr-FR')+' F'+(c.unit||'')+'</option>';
+      });
+      opts += '</optgroup>';
+    });
+    opts += '<option value="__autre__">✏️ Autre...</option>';
+    serviceSel.innerHTML = opts;
+    const clientSel = document.getElementById('r-client');
+    clientSel.innerHTML = '<option value="">-- Choisir un contact --</option>' +
+      DB.contacts.map(c => '<option value="'+c.name+'">'+c.name+(c.city?' ('+c.city+')':'')+'</option>').join('') +
+      '<option value="__autre__">✏️ Autre...</option>';
+    document.getElementById('r-amount').value = '';
+    document.getElementById('r-desc-custom').style.display = 'none';
+    document.getElementById('r-client-custom').style.display = 'none';
+    openModal('modal-recette');
+  }
+}
+
+function saveEncaissement() {
+  const cmdId = document.getElementById('enc-cmd-id').value;
+  const amount = Number(document.getElementById('enc-amount').value);
+  const statut = document.getElementById('enc-statut').value;
+  if(!amount){alert('Montant requis.');return;}
+  const i = DB.commandes.findIndex(c=>c.id===cmdId);
+  if(i<0) return;
+  // Mettre à jour avance et statut
+  DB.commandes[i].avance = Number(DB.commandes[i].avance||0) + amount;
+  DB.commandes[i].statut = statut;
+  // Créer la recette liée
+  DB.recettes.push({
+    id:uid(), desc:DB.commandes[i].service,
+    amount:amount, client:DB.commandes[i].client,
+    cmdId:cmdId, date:today(), ts:Date.now()
+  });
+  save();
+  closeModal('modal-encaissement');
+  renderDashboard();
+  alert('✅ Encaissement enregistré !');
+}
+
+function onRecetteServiceChange() {
+  const val = document.getElementById('r-desc').value;
+  const custom = document.getElementById('r-desc-custom');
+  if(val === '__autre__') {
+    custom.style.display = 'block';
+    custom.focus();
+    return;
+  } else {
+    custom.style.display = 'none';
+    custom.value = '';
+  }
+  const item = DB.catalogue.find(c=>c.name===val);
+  if(item && !document.getElementById('r-amount').value) {
+    document.getElementById('r-amount').value = item.price;
+  }
+}
+
+function onRecetteClientChange() {
+  const val = document.getElementById('r-client').value;
+  const custom = document.getElementById('r-client-custom');
+  if(val === '__autre__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+    custom.value = '';
+  }
+}
+
+function saveRecette() {
+  const descSel = document.getElementById('r-desc').value;
+  const descCustom = document.getElementById('r-desc-custom').value.trim();
+  const desc = descSel === '__autre__' ? descCustom : descSel;
+  const amount = document.getElementById('r-amount').value;
+  if(!desc || !amount){alert('Service et montant requis.');return;}
+  const clientSel = document.getElementById('r-client').value;
+  const clientCustom = document.getElementById('r-client-custom').value.trim();
+  const clientVal = clientSel === '__autre__' ? clientCustom : clientSel;
+  DB.recettes.push({
+    id:uid(), desc, amount:Number(amount),
+    client:clientVal, cmdId:null,
+    date:today(), ts:Date.now()
+  });
+  save();
+  closeModal('modal-recette');
+  renderDashboard();
+}
+
+// ==================== CONTACTS ====================
+const CATS = {
+  kandi:{label:'Client Kandi',color:'#3b82f6',bg:'rgba(59,130,246,0.15)',ico:'📍'},
+  hors:{label:'Hors Kandi',color:'#8b5cf6',bg:'rgba(139,92,246,0.15)',ico:'🚌'},
+  villageois:{label:'Villageois',color:'#10b981',bg:'rgba(16,185,129,0.15)',ico:'🌾'},
+  eleve:{label:'Élève',color:'#06b6d4',bg:'rgba(6,182,212,0.15)',ico:'📚'},
+  vip:{label:'VIP / Fidèle',color:'#FFD200',bg:'rgba(255,210,0,0.15)',ico:'⭐'},
+  prospect:{label:'Prospect',color:'#f97316',bg:'rgba(249,115,22,0.15)',ico:'🎯'},
+};
+let currentContactCat = 'tous';
+
+function filterContacts(cat, el) {
+  currentContactCat = cat;
+  document.querySelectorAll('#page-contacts .mini-tab').forEach(t => t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderContacts('');
+}
+
+function renderContacts(search='') {
+  const list = document.getElementById('contacts-list');
+  let data = DB.contacts.filter(c => {
+    const matchCat = currentContactCat==='tous' || c.cat===currentContactCat;
+    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone||'').includes(search);
+    return matchCat && matchSearch;
+  });
+  if(!data.length){ list.innerHTML='<div class="empty"><div class="eico">👥</div><p>Aucun contact.</p></div>'; return; }
+  list.innerHTML = data.map(c => {
+    const cat = CATS[c.cat]||CATS.kandi;
+    const initials = c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="list-item">
+      <div class="item-ico" style="background:${cat.bg};color:${cat.color}">${initials}</div>
+      <div class="item-info">
+        <div class="item-name">${c.name}</div>
+        <div class="item-sub">${c.phone}${c.city?' • '+c.city:''}</div>
+        <span class="badge" style="background:${cat.bg};color:${cat.color}">${cat.ico} ${cat.label}</span>
+      </div>
+      <div class="item-actions">
+        <button class="icon-btn" onclick="sendWaToContact('${c.id}')" title="WhatsApp">💬</button>
+        <button class="icon-btn" onclick="editContact('${c.id}')" title="Modifier">✏️</button>
+        <button class="icon-btn" style="color:var(--red)" onclick="deleteContact('${c.id}')" title="Supprimer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onCityChange() {
+  const sel = document.getElementById('c-city');
+  const input = document.getElementById('c-city-custom');
+  if(sel.value === 'Autre') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
+function openModal_contact_new() {
+  document.getElementById('modal-contact-title').textContent = 'Nouveau Contact';
+  document.getElementById('c-id').value='';
+  ['c-name','c-phone','c-service','c-note'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('c-city').value='';
+  document.getElementById('c-city-custom').style.display='none';
+  document.getElementById('c-city-custom').value='';
+  document.getElementById('c-cat').value='kandi';
+  openModal('modal-contact');
+}
+
+function editContact(id) {
+  const c = DB.contacts.find(x=>x.id===id); if(!c) return;
+  document.getElementById('modal-contact-title').textContent = 'Modifier Contact';
+  document.getElementById('c-id').value=id;
+  document.getElementById('c-name').value=c.name;
+  document.getElementById('c-phone').value=c.phone;
+  const citySel=document.getElementById('c-city');
+  const knownCities=['Kandi','Angaradébou','Bensékou','Donwari','Kassakou','Saah','Sam','Sonsoro','Gansosso','Alfakoara','Kpalolo','Soundou','Sidérou','Tissarou','Banikoara','Founougo','Gomparou','Goumori','Kokey','Kokiborou','Ounet','Sompérékou','Soroko','Toura','Gogounou','Bagou','Gounarou','Ouara','Sori','Zoungou-Pantrossi','Malanville','Garou','Guéné','Madécali','Toumboutou','Monkassa','Goun-Goun','Ségbana','Liboussou','Lougou','Sokotindji','Karimama','Bogo-Bogo','Kompa','Monsey','Birni Lafia','Bembéréké','Nikki','Parakou','Ndali','Pèrèrè','Tchaourou','Djougou','Natitingou','Cotonou','Porto-Novo','Abomey-Calavi','Autre'];
+  if(c.city && !knownCities.includes(c.city)){
+    const opt=document.createElement('option'); opt.value=c.city; opt.textContent=c.city; citySel.appendChild(opt);
+  }
+  citySel.value=c.city||'';
+  const cityCustom=document.getElementById('c-city-custom');
+  if(c.city && !knownCities.includes(c.city)){
+    citySel.value='Autre';
+    cityCustom.style.display='block';
+    cityCustom.value=c.city;
+  } else {
+    cityCustom.style.display='none';
+    cityCustom.value='';
+  }
+  document.getElementById('c-service').value=c.service||'';
+  document.getElementById('c-note').value=c.note||'';
+  openModal('modal-contact');
+}
+
+function saveContact() {
+  const name=document.getElementById('c-name').value.trim();
+  const phone=document.getElementById('c-phone').value.trim();
+  if(!name||!phone){alert('Nom et téléphone requis.');return;}
+  const id=document.getElementById('c-id').value;
+  const citySelect=document.getElementById('c-city').value;
+  const cityCustom=document.getElementById('c-city-custom').value.trim();
+  const city = citySelect==='Autre' ? cityCustom : citySelect;
+  const data={id:id||uid(),name,phone,city,cat:document.getElementById('c-cat').value,service:document.getElementById('c-service').value.trim(),note:document.getElementById('c-note').value.trim(),created:Date.now()};
+  if(id){ const i=DB.contacts.findIndex(c=>c.id===id); DB.contacts[i]=data; }
+  else DB.contacts.push(data);
+  save(); closeModal('modal-contact'); renderContacts('');
+}
+
+function deleteContact(id) {
+  if(!checkPin('supprimer ce contact')) return;
+  DB.contacts=DB.contacts.filter(c=>c.id!==id);
+  save(); renderContacts('');
+}
+
+// ==================== COMMANDES ====================
+let currentOrderCat = 'tous';
+const ORDER_STATUS = {
+  en_attente:{label:'En attente',cls:'badge-pending'},
+  en_cours:{label:'En cours',cls:'badge-progress'},
+  termine:{label:'Terminé',cls:'badge-done'},
+  livre:{label:'Livré',cls:'badge-delivered'},
+};
+
+function populateCmdSelects() {
+  // Clients
+  const clientSel = document.getElementById('cmd-client');
+  const currentClient = clientSel.value;
+  clientSel.innerHTML = '<option value="">-- Choisir un contact --</option>' +
+    DB.contacts.map(c => `<option value="${c.name}">${c.name}${c.phone?' ('+c.phone+')':''}</option>`).join('') +
+    '<option value="__autre__">✏️ Autre (saisir manuellement)</option>';
+  if(currentClient) clientSel.value = currentClient;
+  clientSel.onchange = function() {
+    const custom = document.getElementById('cmd-client-custom');
+    if(this.value === '__autre__') {
+      custom.style.display = 'block';
+      custom.focus();
+    } else {
+      custom.style.display = 'none';
+      custom.value = '';
+    }
+  };
+
+  // Services depuis catalogue
+  const serviceSel = document.getElementById('cmd-service');
+  const currentService = serviceSel.value;
+  const cats = [...new Set(DB.catalogue.map(c=>c.cat))];
+  let opts = '<option value="">-- Choisir un service --</option>';
+  cats.forEach(cat => {
+    opts += `<optgroup label="${cat}">`;
+    DB.catalogue.filter(c=>c.cat===cat).forEach(c => {
+      opts += `<option value="${c.name}">${c.name} — ${c.price.toLocaleString('fr-FR')} F${c.unit||''}</option>`;
+    });
+    opts += '</optgroup>';
+  });
+  opts += '<option value="__autre__">✏️ Autre (saisir manuellement)</option>';
+  serviceSel.innerHTML = opts;
+  if(currentService) serviceSel.value = currentService;
+  serviceSel.onchange = function() {
+    const custom = document.getElementById('cmd-service-custom');
+    if(this.value === '__autre__') {
+      custom.style.display = 'block';
+      custom.focus();
+    } else {
+      custom.style.display = 'none';
+      custom.value = '';
+      const item = DB.catalogue.find(c=>c.name===this.value);
+      if(item) {
+        if(!document.getElementById('cmd-montant').value) document.getElementById('cmd-montant').value = item.price;
+        if(!document.getElementById('cmd-cout').value) document.getElementById('cmd-cout').value = item.cost||0;
+      }
+    }
+  };
+}
+
+function openModal_commande_new() {
+  document.getElementById('modal-cmd-title').textContent = 'Nouvelle Commande';
+  document.getElementById('cmd-id').value = '';
+  document.getElementById('cmd-montant').value = '';
+  document.getElementById('cmd-cout').value = '';
+  document.getElementById('cmd-avance').value = '';
+  document.getElementById('cmd-deadline').value = '';
+  document.getElementById('cmd-statut').value = 'en_attente';
+  document.getElementById('cmd-note').value = '';
+  document.getElementById('cmd-client-custom').style.display='none';
+  document.getElementById('cmd-client-custom').value='';
+  document.getElementById('cmd-service-custom').style.display='none';
+  document.getElementById('cmd-service-custom').value='';
+  populateCmdSelects();
+  document.getElementById('cmd-client').value = '';
+  document.getElementById('cmd-service').value = '';
+  openModal('modal-commande');
+}
+
+
+function filterOrders(cat, el) {
+  currentOrderCat = cat;
+  document.querySelectorAll('#page-commandes .mini-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderOrders(cat);
+}
+
+function orderCard(c) {
+  const st = ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+  const reste = Number(c.montant||0) - Number(c.avance||0);
+  return `<div class="list-item" onclick="viewOrder('${c.id}')">
+    <div class="item-ico" style="background:rgba(255,210,0,0.1);color:var(--gold)">📋</div>
+    <div class="item-info">
+      <div class="item-name">${c.client}</div>
+      <div class="item-sub">${c.service}</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+        <span class="badge ${st.cls}">${st.label}</span>
+        <span style="font-size:10px;color:var(--gold);font-weight:700">${fmt(c.montant)}</span>
+        ${reste>0?`<span style="font-size:10px;color:var(--red)">Reste: ${fmt(reste)}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOrders(cat) {
+  const list = document.getElementById('orders-list');
+  let data = DB.commandes.filter(c => cat==='tous' || c.statut===cat);
+  data.sort((a,b)=>b.created-a.created);
+  if(!data.length){ list.innerHTML='<div class="empty"><div class="eico">📋</div><p>Aucune commande.</p></div>'; return; }
+  list.innerHTML = data.map(c=>orderCard(c)).join('');
+}
+
+function saveCommande() {
+  const clientSel = document.getElementById('cmd-client').value.trim();
+  const clientCustom = document.getElementById('cmd-client-custom').value.trim();
+  const client = clientSel === '__autre__' ? clientCustom : clientSel;
+  const serviceSel = document.getElementById('cmd-service').value.trim();
+  const serviceCustom = document.getElementById('cmd-service-custom').value.trim();
+  const service = serviceSel === '__autre__' ? serviceCustom : serviceSel;
+  if(!client||!service){alert('Client et service requis.');return;}
+  const id=document.getElementById('cmd-id').value;
+  const data={id:id||uid(),client,service,montant:Number(document.getElementById('cmd-montant').value||0),cout:Number(document.getElementById('cmd-cout').value||0),avance:Number(document.getElementById('cmd-avance').value||0),deadline:document.getElementById('cmd-deadline').value,statut:document.getElementById('cmd-statut').value,note:document.getElementById('cmd-note').value.trim(),created:Date.now()};
+  if(id){ const i=DB.commandes.findIndex(c=>c.id===id); DB.commandes[i]=data; }
+  else DB.commandes.push(data);
+  save(); closeModal('modal-commande'); renderOrders(currentOrderCat);
+}
+
+function viewOrder(id) {
+  const c=DB.commandes.find(x=>x.id===id); if(!c) return;
+  const st=ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+  const reste=Number(c.montant||0)-Number(c.avance||0);
+  const cout = Number(c.cout||0);
+  const marge = c.montant>0 ? Math.round(((c.montant-cout)/c.montant)*100) : 0;
+  const margeColor = marge<30?'var(--red)':marge<50?'var(--orange)':'var(--green)';
+  const margeAlert = marge<30 && cout>0 ? `<div class="alert alert-red" style="margin-top:8px">⚠️ Marge faible : ${marge}% — en dessous du seuil de 30%</div>` : '';
+  document.getElementById('cmd-detail-content').innerHTML=`
+    <div class="bilan-row"><span class="bl-label">Client</span><span class="bl-val" style="color:var(--text);font-size:14px">${c.client}</span></div>
+    <div class="bilan-row"><span class="bl-label">Service</span><span class="bl-val" style="color:var(--text);font-size:13px">${c.service}</span></div>
+    <div class="bilan-row"><span class="bl-label">Statut</span><span class="badge ${st.cls}">${st.label}</span></div>
+    <div class="bilan-row"><span class="bl-label">Montant total</span><span class="bl-val" style="color:var(--gold)">${fmt(c.montant)}</span></div>
+    <div class="bilan-row"><span class="bl-label">Coût variable</span><span class="bl-val" style="color:var(--muted);font-size:16px">${cout>0?fmt(cout):'—'}</span></div>
+    <div class="bilan-row"><span class="bl-label">Marge</span><span class="bl-val" style="color:${margeColor};font-size:16px">${cout>0?marge+'%':'—'}</span></div>
+    <div class="bilan-row"><span class="bl-label">Avance reçue</span><span class="bl-val" style="color:var(--green)">${fmt(c.avance)}</span></div>
+    <div class="bilan-row"><span class="bl-label">Reste à payer</span><span class="bl-val" style="color:${reste>0?'var(--red)':'var(--green)'}">${fmt(reste)}</span></div>
+    ${c.deadline?`<div class="bilan-row"><span class="bl-label">Livraison prévue</span><span class="bl-val" style="color:var(--text);font-size:13px">${c.deadline}</span></div>`:''}
+    ${c.note?`<div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6">${c.note}</div>`:''}
+    ${margeAlert}
+  `;
+  document.getElementById('cmd-detail-actions').innerHTML=`
+    <button class="btn btn-outline" onclick="closeModal('modal-cmd-detail')">Fermer</button>
+    <button class="btn btn-green" onclick="closeModal('modal-cmd-detail');openRecetteModal('${id}')">💰 Encaisser</button>
+    <button class="btn btn-gold" style="flex:1" onclick="closeModal('modal-cmd-detail');editOrder('${id}')">✏️</button>
+    <button class="btn btn-red" onclick="deleteOrder('${id}')">🗑️</button>
+  `;
+  openModal('modal-cmd-detail');
+}
+
+function editOrder(id) {
+  const c=DB.commandes.find(x=>x.id===id); if(!c) return;
+  document.getElementById('modal-cmd-title').textContent='Modifier Commande';
+  document.getElementById('cmd-id').value=id;
+  populateCmdSelects();
+  document.getElementById('cmd-client').value=c.client;
+  document.getElementById('cmd-service').value=c.service;
+  document.getElementById('cmd-montant').value=c.montant;
+  document.getElementById('cmd-cout').value=c.cout||0;
+  document.getElementById('cmd-avance').value=c.avance;
+  document.getElementById('cmd-deadline').value=c.deadline||'';
+  document.getElementById('cmd-statut').value=c.statut;
+  document.getElementById('cmd-note').value=c.note||'';
+  openModal('modal-commande');
+}
+
+function deleteOrder(id) {
+  if(!checkPin('supprimer cette commande')) return;
+  DB.commandes=DB.commandes.filter(c=>c.id!==id);
+  save(); closeModal('modal-cmd-detail'); closeModal('modal-commande'); renderOrders(currentOrderCat);
+}
+
+// ==================== STOCK ====================
+function renderStock() {
+  const alerts=document.getElementById('stock-alerts');
+  const list=document.getElementById('stock-list');
+  const low=DB.stock.filter(s=>Number(s.qty)<=Number(s.alert));
+  alerts.innerHTML=low.map(s=>`<div class="alert alert-${Number(s.qty)===0?'red':'orange'}">⚠️ <strong>${s.name}</strong> — ${s.qty} ${s.unit} restant(s) (seuil: ${s.alert})</div>`).join('');
+  list.innerHTML=DB.stock.map(s=>{
+    const pct=Math.min(100,Math.round((Number(s.qty)/(Number(s.alert)*3||10))*100));
+    const color=Number(s.qty)<=Number(s.alert)?'var(--red)':Number(s.qty)<=Number(s.alert)*2?'var(--orange)':'var(--green)';
+    return `<div class="list-item">
+      <div class="item-ico" style="background:rgba(255,210,0,0.08);color:var(--gold)">📦</div>
+      <div class="item-info">
+        <div class="item-name">${s.name}</div>
+        <div class="item-sub">${s.qty} ${s.unit} · Seuil: ${s.alert} · ${s.price?fmt(s.price)+'/u':''}</div>
+        <div class="stock-bar-wrap"><div class="stock-bar"><div class="stock-fill" style="width:${pct}%;background:${color}"></div></div></div>
+      </div>
+      <div class="item-actions">
+        <button class="icon-btn" onclick="openStockAdj('${s.id}')" title="Ajuster">🔢</button>
+        <button class="icon-btn" onclick="editStock('${s.id}')" title="Modifier">✏️</button>
+        <button class="icon-btn" style="color:var(--red)" onclick="deleteStock('${s.id}')" title="Supprimer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openStockAdj(id) {
+  const s=DB.stock.find(x=>x.id===id); if(!s) return;
+  document.getElementById('sadj-id').value=id;
+  document.getElementById('sadj-name-label').textContent=s.name+' (actuel: '+s.qty+' '+s.unit+')';
+  document.getElementById('sadj-qty').value=s.qty;
+  openModal('modal-stock-adj');
+}
+function saveStockAdj() {
+  const id=document.getElementById('sadj-id').value;
+  const qty=Number(document.getElementById('sadj-qty').value);
+  const i=DB.stock.findIndex(s=>s.id===id);
+  if(i>=0){DB.stock[i].qty=qty; save(); closeModal('modal-stock-adj'); renderStock();}
+}
+
+function editStock(id) {
+  const s=DB.stock.find(x=>x.id===id); if(!s) return;
+  document.getElementById('modal-stock-title').textContent='Modifier Matière';
+  document.getElementById('s-id').value=id;
+  document.getElementById('s-name').value=s.name;
+  document.getElementById('s-unit').value=s.unit;
+  document.getElementById('s-qty').value=s.qty;
+  document.getElementById('s-alert').value=s.alert;
+  document.getElementById('s-price').value=s.price||'';
+  openModal('modal-stock');
+}
+
+function saveStock() {
+  const name=document.getElementById('s-name').value.trim();
+  if(!name){alert('Nom requis.');return;}
+  const id=document.getElementById('s-id').value;
+  const data={id:id||uid(),name,unit:document.getElementById('s-unit').value.trim()||'pcs',qty:Number(document.getElementById('s-qty').value||0),alert:Number(document.getElementById('s-alert').value||5),price:Number(document.getElementById('s-price').value||0)};
+  if(id){const i=DB.stock.findIndex(s=>s.id===id);DB.stock[i]=data;}
+  else DB.stock.push(data);
+  save(); closeModal('modal-stock');
+  document.getElementById('s-id').value='';
+  document.getElementById('modal-stock-title').textContent='Matière Première';
+  renderStock();
+}
+
+function deleteStock(id) {
+  if(!checkPin('supprimer cette matière')) return;
+  DB.stock=DB.stock.filter(s=>s.id!==id);
+  save(); renderStock();
+}
+
+// ==================== CATALOGUE ====================
+function renderCatalogue() {
+  const cats=[...new Set(DB.catalogue.map(c=>c.cat))];
+  let html='';
+  cats.forEach(cat=>{
+    html+=`<tr><td colspan="4" class="cat-section-header">${cat}</td></tr>`;
+    DB.catalogue.filter(c=>c.cat===cat).forEach(c=>{
+      const cost = Number(c.cost||0);
+      const marge = c.price>0 ? Math.round(((c.price-cost)/c.price)*100) : 0;
+      const margeColor = marge<30?'var(--red)':marge<50?'var(--orange)':'var(--green)';
+      html+=`<tr>
+        <td>${c.name}<br><span style="font-size:9px;color:var(--muted)">${c.detail||''}</span></td>
+        <td style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold)">${c.price.toLocaleString('fr-FR')} ${c.unit||''}</td>
+        <td style="font-size:11px;color:var(--muted)">${cost>0?cost.toLocaleString('fr-FR')+' F':'—'}</td>
+        <td style="font-size:11px;color:${margeColor};font-weight:700">${cost>0?marge+'%':'—'} <button onclick="editCatItem('${c.id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:11px">✏️</button><button onclick="deleteCatItem('${c.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px">✕</button></td>
+      </tr>`;
+    });
+  });
+  document.getElementById('catalogue-body').innerHTML=html;
+}
+
+function saveCatItem() {
+  const name=document.getElementById('ci-name').value.trim();
+  const price=Number(document.getElementById('ci-price').value);
+  if(!name||!price){alert('Nom et prix requis.');return;}
+  const id=document.getElementById('ci-id')?document.getElementById('ci-id').value:'';
+  const data={id:id||uid(),cat:document.getElementById('ci-cat').value.trim()||'Autres',name,detail:document.getElementById('ci-detail').value.trim(),price,cost:Number(document.getElementById('ci-cost').value||0),unit:document.getElementById('ci-unit').value.trim()};
+  if(id){const i=DB.catalogue.findIndex(c=>c.id===id);if(i>=0)DB.catalogue[i]=data;else DB.catalogue.push(data);}
+  else DB.catalogue.push(data);
+  save(); closeModal('modal-cat-item');
+  ['ci-cat','ci-name','ci-detail','ci-price','ci-cost','ci-unit'].forEach(f=>document.getElementById(f).value='');
+  if(document.getElementById('ci-id'))document.getElementById('ci-id').value='';
+  renderCatalogue();
+}
+
+function editCatItem(id) {
+  const c=DB.catalogue.find(x=>x.id===id); if(!c) return;
+  document.getElementById('ci-cat').value=c.cat||'';
+  document.getElementById('ci-name').value=c.name;
+  document.getElementById('ci-detail').value=c.detail||'';
+  document.getElementById('ci-price').value=c.price;
+  document.getElementById('ci-cost').value=c.cost||0;
+  document.getElementById('ci-unit').value=c.unit||'';
+  if(!document.getElementById('ci-id')){
+    const inp=document.createElement('input');inp.type='hidden';inp.id='ci-id';
+    document.getElementById('modal-cat-item').querySelector('.modal').appendChild(inp);
+  }
+  document.getElementById('ci-id').value=id;
+  openModal('modal-cat-item');
+}
+
+function deleteCatItem(id) {
+  if(!checkPin('supprimer ce service')) return;
+  DB.catalogue=DB.catalogue.filter(c=>c.id!==id);
+  save(); renderCatalogue();
+}
+
+// ==================== CHARGES ====================
+function saveCharge() {
+  const name = document.getElementById('ch-name').value.trim();
+  const montant = Number(document.getElementById('ch-montant').value);
+  if(!name||!montant){alert('Nom et montant requis.');return;}
+  const id = document.getElementById('ch-id').value;
+  const data = {id:id||uid(), name, montant, categorie:document.getElementById('ch-categorie').value};
+  if(id){const i=DB.charges.findIndex(c=>c.id===id);if(i>=0)DB.charges[i]=data;else DB.charges.push(data);}
+  else DB.charges.push(data);
+  save(); closeModal('modal-charge');
+  populateBilanMonths(); renderBilan();
+}
+
+function editCharge(id) {
+  const c = DB.charges.find(x=>x.id===id); if(!c) return;
+  document.getElementById('modal-charge-title').textContent = 'Modifier Charge';
+  document.getElementById('ch-id').value = id;
+  document.getElementById('ch-name').value = c.name;
+  document.getElementById('ch-montant').value = c.montant;
+  document.getElementById('ch-categorie').value = c.categorie||'fixe';
+  openModal('modal-charge');
+}
+
+function deleteCharge(id) {
+  if(!checkPin('supprimer cette charge')) return;
+  DB.charges = DB.charges.filter(c=>c.id!==id);
+  save(); populateBilanMonths(); renderBilan();
+}
+
+// ==================== BILAN ====================
+function populateBilanMonths() {
+  const sel=document.getElementById('bilan-month');
+  const months=new Set();
+  DB.recettes.forEach(r=>months.add(r.date.slice(0,7)));
+  const now=today().slice(0,7);
+  months.add(now);
+  sel.innerHTML=[...months].sort().reverse().map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+function renderBilan() {
+  const month=document.getElementById('bilan-month').value;
+  const recettes=DB.recettes.filter(r=>r.date.startsWith(month));
+  const totalRecettes=recettes.reduce((s,r)=>s+Number(r.amount),0);
+  const commandes=DB.commandes.filter(c=>c.created && new Date(c.created).toISOString().slice(0,7)===month);
+  const cmdLivrees=commandes.filter(c=>c.statut==='livre').length;
+  const totalCmds=commandes.reduce((s,c)=>s+Number(c.montant||0),0);
+  const avances=commandes.reduce((s,c)=>s+Number(c.avance||0),0);
+  const resteTotal=totalCmds-avances;
+  const stockVal=DB.stock.reduce((s,st)=>s+Number(st.qty||0)*Number(st.price||0),0);
+  const objectif=150000;
+  const pct=Math.min(100,Math.round((totalRecettes/objectif)*100));
+
+  const totalCouts = commandes.reduce((s,c)=>s+Number(c.cout||0),0);
+  const totalCharges = DB.charges.reduce((s,c)=>s+Number(c.montant||0),0);
+  const beneficeNet = totalRecettes - totalCouts - totalCharges;
+  const margeGlobale = totalRecettes>0 ? Math.round(((totalRecettes-totalCouts-totalCharges)/totalRecettes)*100) : 0;
+  const margeColor = margeGlobale<30?'var(--red)':margeGlobale<50?'var(--orange)':'var(--green)';
+  const beneficeColor = beneficeNet>=0?'var(--green)':'var(--red)';
+  // Commandes marge faible
+  const cmdsMargeFaible = commandes.filter(c=>{
+    const cout=Number(c.cout||0); if(!cout||!c.montant) return false;
+    return Math.round(((c.montant-cout)/c.montant)*100) < 30;
+  });
+  const recos=[];
+  if(cmdsMargeFaible.length>0) recos.push({t:'⚠️ Marges faibles',v:cmdsMargeFaible.length+' commande(s) sous 30% de marge. Révise tes coûts ou tes prix.'});
+  if(totalRecettes<objectif*0.5) recos.push({t:'Boost recettes',v:'Tu es à moins de 50% de l\'objectif. Intensifie la prospection WhatsApp et cible les commerçants cette semaine.'});
+  if(DB.stock.filter(s=>Number(s.qty)<=Number(s.alert)).length>0) recos.push({t:'Réapprovisionner',v:'Plusieurs matières sont en stock faible. Prévoir achat avant la semaine prochaine.'});
+  if(resteTotal>0) recos.push({t:'Encaisser les restes',v:`${fmt(resteTotal)} de commandes non encore encaissés. Relance les clients concernés.`});
+  if(commandes.filter(c=>c.statut==='en_attente').length>2) recos.push({t:'Traiter les commandes en attente',v:'Tu as plusieurs commandes en attente. Commence par les plus urgentes selon la date de livraison.'});
+  if(recos.length===0) recos.push({t:'Excellent travail !',v:'Continue sur cette lancée. Pense à fidéliser tes meilleurs clients avec une offre spéciale ce mois-ci.'});
+
+  // Objectif mois suivant
+  const nextObjectif = Math.max(objectif, Math.round(totalRecettes * 1.2));
+
+  document.getElementById('bilan-content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Résumé — ${month}</div>
+      <div class="bilan-row"><span class="bl-label">Recettes enregistrées</span><span class="bl-val" style="color:var(--green)">${fmt(totalRecettes)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Coûts variables</span><span class="bl-val" style="color:var(--red)">— ${fmt(totalCouts)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Charges fixes</span><span class="bl-val" style="color:var(--red)">— ${fmt(totalCharges)}</span></div>
+      <div class="bilan-total" style="margin:8px 0"><span class="bt-label">💰 Bénéfice net</span><span class="bt-val" style="color:${beneficeColor}">${fmt(beneficeNet)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Marge nette</span><span class="bl-val" style="color:${margeColor}">${margeGlobale}%</span></div>
+      <div class="bilan-row"><span class="bl-label">Commandes du mois</span><span class="bl-val" style="color:var(--text);font-size:16px">${commandes.length} (${cmdLivrees} livrées)</span></div>
+      <div class="bilan-row"><span class="bl-label">Montant commandes</span><span class="bl-val" style="color:var(--gold)">${fmt(totalCmds)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Avances encaissées</span><span class="bl-val" style="color:var(--green)">${fmt(avances)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Restes à encaisser</span><span class="bl-val" style="color:var(--red)">${fmt(resteTotal)}</span></div>
+      <div class="bilan-row"><span class="bl-label">Valeur stock actuel</span><span class="bl-val" style="color:var(--text);font-size:16px">${fmt(stockVal)}</span></div>
+      <div class="bilan-total"><span class="bt-label">Objectif mensuel</span><span class="bt-val">${fmt(objectif)}</span></div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Progression</span><span>${pct}%</span></div>
+        <div class="stock-bar"><div class="stock-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'var(--gold)':'var(--red)'}"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏠 Charges du mois</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:11px;color:var(--muted)">Modifiables chaque mois</span>
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:10px" onclick="openModal('modal-charge');document.getElementById('ch-id').value='';document.getElementById('ch-name').value='';document.getElementById('ch-montant').value='';document.getElementById('ch-categorie').value='fixe';document.getElementById('modal-charge-title').textContent='Nouvelle Charge'">+ Ajouter</button>
+      </div>
+      ${DB.charges.map(c=>`
+        <div class="bilan-row">
+          <span class="bl-label">${c.categorie==='fixe'?'🔒':'🔄'} ${c.name}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="bl-val" style="color:var(--red);font-size:16px">${fmt(c.montant)}</span>
+            <button onclick="editCharge('${c.id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px">✏️</button>
+            <button onclick="deleteCharge('${c.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px">🗑️</button>
+          </div>
+        </div>`).join('')}
+      <div class="bilan-total" style="margin-top:8px">
+        <span class="bt-label">Total charges</span>
+        <span class="bt-val" style="color:var(--red)">${fmt(totalCharges)}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 Objectif mois suivant</div>
+      <div class="bilan-total"><span class="bt-label">Objectif suggéré</span><span class="bt-val">${fmt(nextObjectif)}</span></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.7">
+        Basé sur une progression de +20% par rapport à ce mois.<br>
+        Soit environ <strong style="color:var(--gold)">${fmt(Math.round(nextObjectif/26))}/jour</strong> sur 26 jours ouvrables.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 Recommandations</div>
+      ${recos.map(r=>`<div class="reco-card"><div class="reco-title">${r.t}</div><div class="reco-text">${r.v}</div></div>`).join('')}
+    </div>
+  `;
+}
+
+// ==================== WHATSAPP ====================
+const WA_MSGS = {
+  kandi: `🎉 *SLG Kandi* — Toujours à votre service !\n\n🖨️ Photocopie & Impression\n📸 Photos & Portraits\n🎨 Conception graphique\n👕 T-shirts & Tasses personnalisés\n💼 Cartes de visite & Cachets\n🖼️ Bâche & Roll-up\n💻 Maintenance informatique\n\n✅ Qualité garantie | Prix abordables\n📍 Gansosso, voie pavée, Kandi\n📞 0196 709 750`,
+  hors: `📣 *SLG Kandi — On livre partout dans l'Alibori !*\n\nPas besoin de vous déplacer !\n🎨 Logo, Flyer, Affiche\n🖼️ Bâche publicitaire & Roll-up\n👕 T-shirts & Tasses personnalisés\n💼 Cartes de visite & Cachets\n\n📦 Livraison par transport (GTTS/bus)\n✅ Paiement à la livraison possible\n📞 0196 709 750 (WhatsApp)`,
+  villageois: `👋 *SLG Kandi* vous accueille lors de vos déplacements en ville !\n\n📸 4 photos d'identité : 500 F\n🖨️ Photocopie : 25 F/page\n👕 T-shirts personnalisés\n\n⚡ Service rapide & soigné\n📍 Gansosso, voie pavée, Kandi\n📞 0196 709 750`,
+  eleve: `📚 *Élèves & Étudiants de Kandi !*\n\nBesoin de photocopies, impressions ou photos pour l'école ?\n\n📄 Photocopie : 25 F/page\n🖨️ Impression couleur : 150 F/page\n📸 4 photos d'identité : 500 F\n\n⚡ Service rapide !\n📍 Gansosso, Kandi\n📞 0196 709 750`,
+  vip: `⭐ Cher(e) client(e) fidèle,\n\nMerci pour votre confiance envers *SLG Kandi* !\n\n🎁 Rappel : après 5 services, le 6ème à moitié prix.\n\n✨ Nouveautés : Bâche pub, Roll-up, Conception graphique !\n\n📞 0196 709 750 — Toujours à votre service.`,
+  prospect: `👋 Bonjour !\n\nNous vous contactons de la part de *SLG Kandi*.\n\n🎨 Logo & Graphisme\n🖨️ Impression toutes tailles\n👕 T-shirts & objets personnalisés\n💼 Cartes de visite & Cachets\n\n✅ Qualité garantie | Prix abordables\n📍 Gansosso, Kandi\n📞 0196 709 750`,
+  lancement: `🎉 *SLG est ouvert à Kandi !*\n\n📍 Quartier Gansosso, voie pavée\n\n🖨️ Photocopie & Impression\n⌨️ Saisie de documents\n📸 Photos & Portraits\n👕 T-shirts personnalisés\n☕ Tasses personnalisées\n🔑 Porte-clés\n🎨 Conception graphique\n🖼️ Tableaux photo\n💼 Cartes de visite & Facturiers\n🔖 Cachets / Tampons\n💻 Maintenance informatique\n\n✅ Qualité garantie | Prix abordables\n📞 0196 709 750 (WhatsApp)`,
+};
+
+let currentWaCat = 'kandi';
+function showWaMsg(cat, el) {
+  currentWaCat = cat;
+  document.querySelectorAll('#page-wa .mini-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('wa-preview').textContent = WA_MSGS[cat]||'';
+}
+function copyWaMsg() {
+  navigator.clipboard.writeText(WA_MSGS[currentWaCat]||'').then(()=>alert('✅ Message copié !'));
+}
+function renderWaContactSelect() {
+  const sel=document.getElementById('wa-contact-select');
+  sel.innerHTML='<option value="">-- Choisir un contact --</option>'+DB.contacts.map(c=>`<option value="${c.phone}">${c.name} (${c.phone})</option>`).join('');
+}
+function sendWa() {
+  const phone=document.getElementById('wa-contact-select').value;
+  if(!phone){alert('Choisir un contact.');return;}
+  const msg=WA_MSGS[currentWaCat]||'';
+  window.open(`https://wa.me/229${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function sendWaToContact(id) {
+  const c=DB.contacts.find(x=>x.id===id); if(!c) return;
+  const msg=WA_MSGS[c.cat]||WA_MSGS.kandi;
+  window.open(`https://wa.me/229${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ==================== INIT ====================
+document.getElementById('hdate').innerHTML = todayLabel() + '<br>' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+document.querySelector('#page-contacts .btn-gold').onclick = function(){ openModal_contact_new(); };
+document.querySelector('#page-commandes .btn-gold').onclick = function(){ openModal_commande_new(); };
+// L'app se lance via onAuthStateChanged ci-dessus
+</script>
+</body>
+</html>

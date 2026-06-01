@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SLG — Gestion Pro v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --gold:#FFD200;--gold2:#F7971E;--dark:#0A0E1A;--panel:#111827;
+  --card:#1A2235;--border:rgba(255,210,0,0.12);--text:#F0F4FF;
+  --muted:#6B7FA3;--green:#10B981;--red:#EF4444;--blue:#3B82F6;
+  --purple:#8B5CF6;--radius:14px;--nav:64px;
+}
+body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── LOADING ── */
+#loading-screen{position:fixed;inset:0;background:var(--dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.ls-logo{font-family:'Syne',sans-serif;font-size:64px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-2px;}
+.spinner{width:32px;height:32px;border:2px solid rgba(255,210,0,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--dark);z-index:9998;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;background-image:radial-gradient(ellipse at 20% 50%,rgba(255,210,0,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(247,151,30,0.04) 0%,transparent 50%);}
+.login-logo{font-family:'Syne',sans-serif;font-size:80px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-3px;line-height:1;}
+.login-tagline{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:48px;}
+.login-card{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px 24px;}
+.login-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;color:var(--gold);}
+#login-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#FCA5A5;border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none;}
+
+/* ── APP SHELL ── */
+#app{display:none;}
+.header{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.h-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;}
+.h-right{display:flex;align-items:center;gap:10px;}
+.h-role{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.h-date{font-size:10px;color:var(--muted);}
+.h-logout{background:rgba(255,210,0,0.1);border:1px solid rgba(255,210,0,0.2);color:var(--gold);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;gap:4px;border-top:2px solid transparent;transition:all 0.2s;}
+.nav-item .ni{font-size:20px;}
+.nav-item.active{color:var(--gold);border-top-color:var(--gold);}
+
+/* ── PAGES ── */
+.page{display:none;padding:16px 14px 80px;min-height:calc(100vh - 56px);}
+.page.active{display:block;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--dark);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(255,210,0,0.4);}
+.form-select option{background:var(--dark);}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── BUTTONS ── */
+.btn{border:none;border-radius:10px;padding:11px 16px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;}
+.btn-gold{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#0A0E1A;}
+.btn-outline{background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.25);color:var(--gold);}
+.btn-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);}
+.btn-green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);}
+.btn-full{width:100%;display:block;text-align:center;}
+.btn:active{transform:scale(0.97);}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-head h2{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.stat-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--gold);line-height:1;}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-top:4px;}
+.stat-sub{font-size:13px;font-weight:600;margin-top:3px;}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--panel);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;border-top:1px solid var(--border);}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 18px;}
+.modal h3{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--gold);letter-spacing:-0.5px;margin-bottom:18px;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+
+/* ── LIST ITEMS ── */
+.list-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;}
+.list-item:hover,.list-item:active{border-color:rgba(255,210,0,0.3);}
+.item-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.item-info{flex:1;min-width:0;}
+.item-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.item-actions{display:flex;gap:6px;flex-shrink:0;}
+.icon-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;}
+
+/* ── BADGES ── */
+.badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;display:inline-block;}
+.badge-pending{background:rgba(249,115,22,0.15);color:#F97316;}
+.badge-progress{background:rgba(59,130,246,0.15);color:var(--blue);}
+.badge-done{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-delivered{background:rgba(139,92,246,0.15);color:var(--purple);}
+
+/* ── TABS ── */
+.mini-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.mini-tabs::-webkit-scrollbar{display:none;}
+.mini-tab{padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;background:var(--card);color:var(--muted);border:1px solid var(--border);white-space:nowrap;transition:all 0.2s;}
+.mini-tab.active{background:rgba(255,210,0,0.12);border-color:rgba(255,210,0,0.4);color:var(--gold);}
+
+/* ── ALERTS ── */
+.alert{border-radius:10px;padding:11px 14px;margin-bottom:10px;font-size:13px;font-weight:500;}
+.alert-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#FCA5A5;}
+.alert-orange{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:#FDBA74;}
+.alert-green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#6EE7B7;}
+
+/* ── STOCK BAR ── */
+.stock-bar{height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:6px;}
+.stock-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+
+/* ── BILAN ── */
+.bilan-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.bl-label{font-size:13px;color:var(--muted);}
+.bl-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+.bilan-total{background:linear-gradient(135deg,rgba(247,151,30,0.1),rgba(255,210,0,0.08));border:1px solid rgba(255,210,0,0.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.bt-label{font-size:13px;font-weight:600;}
+.bt-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--gold);}
+
+/* ── RECO ── */
+.reco-card{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.reco-title{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.reco-text{font-size:12px;color:var(--text);line-height:1.6;}
+
+/* ── CHART ── */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:100px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,var(--gold2),var(--gold));min-height:4px;transition:height 0.5s;}
+.bar-label{font-size:8px;color:var(--muted);text-align:center;font-weight:600;}
+.bar-val{font-size:8px;color:var(--gold);font-weight:700;}
+
+/* ── SYNC STATUS ── */
+#sync-status{position:fixed;top:64px;right:12px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:1px;z-index:200;opacity:0;transition:opacity 0.4s;pointer-events:none;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:12px;font-weight:600;z-index:600;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;margin-bottom:12px;}
+.search-bar::placeholder{color:var(--muted);}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-ico{font-size:40px;margin-bottom:12px;}
+.empty p{font-size:13px;line-height:1.7;}
+
+/* ── RECEIPT ── */
+#receipt-preview{background:white;color:#111;border-radius:12px;padding:20px;margin-top:14px;font-family:'DM Sans',sans-serif;}
+.receipt-header{text-align:center;border-bottom:2px solid #FFD200;padding-bottom:14px;margin-bottom:14px;}
+.receipt-logo{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:#F7971E;letter-spacing:-1px;}
+.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px;}
+.receipt-total{display:flex;justify-content:space-between;padding:10px 0;font-weight:700;font-size:14px;border-top:2px solid #FFD200;margin-top:8px;}
+.receipt-footer{text-align:center;margin-top:14px;font-size:10px;color:#666;}
+
+/* ── PIN MODAL ── */
+#modal-pin .modal{max-width:300px;margin:0 auto;}
+#pin-input{font-size:32px;text-align:center;letter-spacing:12px;font-weight:700;}
+#pin-error{color:var(--red);font-size:12px;text-align:center;margin-top:6px;display:none;}
+
+/* ── NOTIFICATION BADGE ── */
+.notif-badge{position:absolute;top:-2px;right:-2px;background:var(--red);color:white;font-size:8px;font-weight:700;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;}
+.nav-ico-wrap{position:relative;display:inline-block;}
+.archived-badge{background:rgba(107,127,163,0.15);border:1px solid rgba(107,127,163,0.3);color:var(--muted);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;display:inline-block;margin-left:6px;}
+.cmd-archived{opacity:0.75;}
+.cloture-banner{background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:12px;color:#6EE7B7;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="ls-logo">SLG</div>
+  <div class="spinner"></div>
+  <div style="font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;">Chargement...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">SLG</div>
+  <div class="login-tagline">Gestion Pro • Kandi</div>
+  <div class="login-card">
+    <div class="login-title">Connexion</div>
+    <div id="login-error"></div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="login-email" type="email" placeholder="votre@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" onkeyup="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-gold btn-full" style="margin-top:8px;" onclick="doLogin()">Se connecter →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="h-logo">SLG</div>
+    <div class="h-date" id="hdate"></div>
+  </div>
+  <div class="h-right">
+    <div>
+      <div class="h-role" id="h-role"></div>
+    </div>
+    <button class="h-logout" onclick="doLogout()">↪ Sortir</button>
+  </div>
+</div>
+
+<!-- PAGES -->
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num" id="db-recettes-count">0</div>
+      <div class="stat-label">Recettes aujourd'hui</div>
+      <div class="stat-sub" id="db-recettes-amount" style="color:var(--green)">0 F</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-commandes-count">0</div>
+      <div class="stat-label">Commandes actives</div>
+      <div class="stat-sub" id="db-commandes-sub" style="color:var(--gold)">En cours</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-contacts-count">0</div>
+      <div class="stat-label">Contacts</div>
+      <div class="stat-sub" style="color:var(--muted)">Total</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="db-alerts-count">0</div>
+      <div class="stat-label">Alertes stock</div>
+      <div class="stat-sub" style="color:var(--red)">À réapprovisionner</div>
+    </div>
+  </div>
+
+  <div id="stock-alerts-db"></div>
+  <div id="retard-alerts-db"></div>
+
+  <!-- Graphique recettes 7 jours -->
+  <div class="chart-wrap" id="chart-wrap-db">
+    <div class="chart-title">Recettes — 7 derniers jours</div>
+    <div class="bar-chart" id="chart-bars"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Commandes récentes</div>
+    <div id="recent-orders"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Caisse du jour</div>
+    <div id="today-caisse"></div>
+    <button class="btn btn-gold btn-full" style="margin-top:12px;" onclick="openRecetteModal(null)">+ Enregistrer une recette</button>
+  </div>
+</div>
+
+<!-- CONTACTS -->
+<div class="page" id="page-contacts">
+  <div class="section-head">
+    <h2>Contacts</h2>
+    <button class="btn btn-gold" id="btn-add-contact">+ Ajouter</button>
+  </div>
+  <input class="search-bar" placeholder="🔍 Rechercher..." oninput="renderContacts(this.value)" id="contact-search">
+  <div class="mini-tabs">
+    <div class="mini-tab active" onclick="filterContacts('tous',this)">Tous</div>
+    <div class="mini-tab" onclick="filterContacts('vip',this)">⭐ VIP</div>
+    <div class="mini-tab" onclick="filterContacts('kandi',this)">📍 Kandi</div>
+    <div class="mini-tab" onclick="filterContacts('hors',this)">🚌 Hors Kandi</div>
+    <div class="mini-tab" onclick="filterContacts('villageois',this)">🌾 Villageois</div>
+    <div class="mini-tab" onclick="filterContacts('eleve',this)">📚 Élèves</div>
+    <div class="mini-tab" onclick="filterContacts('prospect',this)">🎯 Prospects</div>
+  </div>
+  <div id="contacts-list"></div>
+</div>
+
+<!-- COMMANDES -->
+<div class="page" id="page-commandes">
+  <div class="section-head">
+    <h2>Commandes</h2>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-outline" style="padding:8px 10px;font-size:11px;" onclick="showArchives()" id="btn-archives">📁 Archives</button>
+      <button class="btn btn-gold" id="btn-add-commande">+ Nouvelle</button>
+    </div>
+  </div>
+  <!-- Mois en cours -->
+  <div id="cmd-current-month">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span id="cmd-month-label" style="font-size:12px;font-weight:600;color:var(--gold);letter-spacing:1px;"></span>
+      <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" id="btn-cloture" onclick="clotureManuelle()">🔒 Clôturer le mois</button>
+    </div>
+    <div class="mini-tabs">
+      <div class="mini-tab active" onclick="filterOrders('tous',this)">Toutes</div>
+      <div class="mini-tab" onclick="filterOrders('en_attente',this)">⏳ Attente</div>
+      <div class="mini-tab" onclick="filterOrders('en_cours',this)">🔄 En cours</div>
+      <div class="mini-tab" onclick="filterOrders('termine',this)">✅ Terminé</div>
+      <div class="mini-tab" onclick="filterOrders('livre',this)">📦 Livré</div>
+      <div class="mini-tab" onclick="filterOrders('retard',this)" id="tab-retard">⚠️ Retard</div>
+    </div>
+    <div id="orders-list"></div>
+  </div>
+  <!-- Archives -->
+  <div id="cmd-archives" style="display:none;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-outline" style="padding:6px 10px;font-size:11px;" onclick="hideArchives()">← Retour</button>
+      <select class="form-select" id="archive-month-select" onchange="renderArchives()" style="flex:1;padding:8px 12px;font-size:13px;"></select>
+      <button class="btn btn-outline" style="padding:6px 10px;font-size:11px;" onclick="exportArchivePDF()">📄 PDF</button>
+    </div>
+    <div id="archives-list"></div>
+  </div>
+</div>
+
+<!-- STOCK -->
+<div class="page" id="page-stock">
+  <div class="section-head">
+    <h2>Stock</h2>
+    <button class="btn btn-gold" id="btn-add-stock">+ Ajouter</button>
+  </div>
+  <div id="stock-alerts"></div>
+  <div id="stock-list"></div>
+</div>
+
+<!-- CATALOGUE -->
+<div class="page" id="page-catalogue">
+  <div class="section-head">
+    <h2>Catalogue & Prix</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-cat-item')">+ Service</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;" id="catalogue-table">
+      <thead><tr style="background:rgba(255,210,0,0.06);">
+        <th style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 12px;text-align:left;">Service</th>
+        <th style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 8px;text-align:right;">Prix</th>
+        <th style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 8px;text-align:right;">Coût</th>
+        <th style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 8px;text-align:right;">Marge</th>
+      </tr></thead>
+      <tbody id="catalogue-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BILAN -->
+<div class="page" id="page-bilan">
+  <div class="section-head">
+    <h2>Bilan</h2>
+    <select class="form-select" id="bilan-month" onchange="renderBilan()" style="width:auto;padding:7px 10px;font-size:12px;"></select>
+  </div>
+  <div id="bilan-content"></div>
+  <div class="card" style="margin-top:12px;">
+    <div class="card-title">💾 Sauvegarde locale</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Exporte tes données chaque semaine pour éviter toute perte.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-gold" style="flex:1" onclick="exportBackup()">⬇️ Exporter</button>
+      <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('import-file').click()">⬆️ Restaurer</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(this)">
+    </div>
+    <div id="backup-status" style="font-size:11px;color:var(--green);text-align:center;margin-top:8px;display:none;"></div>
+  </div>
+</div>
+
+<!-- EQUIPE / UTILISATEURS -->
+<div class="page" id="page-users">
+  <div class="section-head">
+    <h2>Gestion de l'Équipe</h2>
+  </div>
+  <div class="card">
+    <div class="card-title">👑 Administrateurs</div>
+    <div class="list-item">
+      <div class="item-ico" style="background:rgba(255,210,0,0.12);color:var(--gold);">DT</div>
+      <div class="item-info">
+        <div class="item-name">Ulrich TOKPANOU</div>
+        <div class="item-sub">tmcu16@gmail.com</div>
+        <span class="badge" style="background:rgba(255,210,0,0.12);color:var(--gold);">Directeur Technique</span>
+      </div>
+    </div>
+    <div class="list-item">
+      <div class="item-ico" style="background:rgba(255,210,0,0.12);color:var(--gold);">DR</div>
+      <div class="item-info">
+        <div class="item-name">Directrice</div>
+        <div class="item-sub">peuguya@gmail.com</div>
+        <span class="badge" style="background:rgba(255,210,0,0.12);color:var(--gold);">Directrice</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Rôles & Permissions</div>
+    <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;width:100%;">
+        <span style="font-size:20px;">👑</span>
+        <div>
+          <div class="item-name">Directrice / Dir. Technique</div>
+          <div class="item-sub">Accès complet — bilan, finances, suppressions, catalogue</div>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;width:100%;">
+        <span style="font-size:20px;">📝</span>
+        <div>
+          <div class="item-name">Secrétaire</div>
+          <div class="item-sub">Contacts, commandes, recettes — bilan visible, pas de suppressions</div>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;width:100%;">
+        <span style="font-size:20px;">🤝</span>
+        <div>
+          <div class="item-name">Associé</div>
+          <div class="item-sub">Contacts, commandes, stock, recettes — bilan masqué</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">➕ Ajouter un membre</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Pour ajouter un nouveau membre, allez sur Firebase Authentication et ajoutez l'utilisateur. Ensuite ajoutez son email ci-dessous pour définir son rôle dans l'application.</p>
+    <div class="form-group"><label class="form-label">Email du nouveau membre</label><input class="form-input" id="new-user-email" type="email" placeholder="email@example.com"></div>
+    <div class="form-group"><label class="form-label">Rôle</label>
+      <select class="form-select" id="new-user-role">
+        <option value="secretaire">📝 Secrétaire</option>
+        <option value="associe">🤝 Associé</option>
+      </select>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="saveNewUser()">+ Ajouter ce membre</button>
+    <div id="users-list" style="margin-top:14px;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔐 Changer le code PIN</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Le code PIN protège les suppressions. Seuls les administrateurs peuvent le changer.</p>
+    <div class="form-group"><label class="form-label">Ancien PIN</label><input class="form-input" id="old-pin" type="password" placeholder="••••" maxlength="4"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nouveau PIN</label><input class="form-input" id="new-pin" type="password" placeholder="••••" maxlength="4"></div>
+      <div class="form-group"><label class="form-label">Confirmer</label><input class="form-input" id="new-pin2" type="password" placeholder="••••" maxlength="4"></div>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="changePin()">🔐 Changer le PIN</button>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div class="page" id="page-wa">
+  <div class="section-head"><h2>Messages WhatsApp</h2></div>
+  <div class="mini-tabs">
+    <div class="mini-tab active" onclick="showWaMsg('kandi',this)">📍 Kandi</div>
+    <div class="mini-tab" onclick="showWaMsg('hors',this)">🚌 Hors Kandi</div>
+    <div class="mini-tab" onclick="showWaMsg('villageois',this)">🌾 Villageois</div>
+    <div class="mini-tab" onclick="showWaMsg('eleve',this)">📚 Élèves</div>
+    <div class="mini-tab" onclick="showWaMsg('vip',this)">⭐ VIP</div>
+    <div class="mini-tab" onclick="showWaMsg('prospect',this)">🎯 Prospect</div>
+    <div class="mini-tab" onclick="showWaMsg('lancement',this)">🎉 Lancement</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Aperçu</div>
+    <div id="wa-preview" style="background:#DCF8C6;color:#111;border-radius:0 12px 12px 12px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;position:relative;">
+      <div style="position:absolute;top:0;left:-8px;width:0;height:0;border-top:8px solid #DCF8C6;border-left:8px solid transparent;"></div>
+    </div>
+    <button class="btn btn-green btn-full" style="margin-top:12px;" onclick="copyWaMsg()">📋 Copier le message</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Envoyer à un contact</div>
+    <select class="form-select" id="wa-contact-select" style="margin-bottom:10px;"><option value="">-- Choisir --</option></select>
+    <button class="btn btn-green btn-full" onclick="sendWa()">📲 Ouvrir WhatsApp</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="ni">🏠</span>Accueil</div>
+  <div class="nav-item" onclick="showPage('contacts',this)"><span class="ni">👥</span>Contacts</div>
+  <div class="nav-item" onclick="showPage('commandes',this)">
+    <span class="nav-ico-wrap"><span class="ni">📋</span><span class="notif-badge" id="badge-retard" style="display:none">!</span></span>
+    Commandes
+  </div>
+  <div class="nav-item" onclick="showPage('stock',this)"><span class="ni">📦</span>Stock</div>
+  <div class="nav-item" onclick="showPage('catalogue',this)"><span class="ni">🏷️</span>Prix</div>
+  <div class="nav-item" id="nav-bilan" onclick="showPage('bilan',this)"><span class="ni">📊</span>Bilan</div>
+  <div class="nav-item" id="nav-users" onclick="showPage('users',this)"><span class="ni">👤</span>Équipe</div>
+  <div class="nav-item" onclick="showPage('wa',this)"><span class="ni">💬</span>WhatsApp</div>
+</div>
+
+</div><!-- /app -->
+
+<!-- SYNC STATUS -->
+<div id="sync-status"></div>
+<div id="toast"></div>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- PIN -->
+<div class="modal-overlay" id="modal-pin">
+  <div class="modal" style="max-width:300px;margin:0 auto;">
+    <div class="modal-handle"></div>
+    <h3>🔐 Code PIN</h3>
+    <p id="pin-action-label" style="font-size:12px;color:var(--muted);margin-bottom:14px;"></p>
+    <input class="form-input" id="pin-input" type="password" placeholder="••••" maxlength="4" style="font-size:32px;text-align:center;letter-spacing:12px;font-weight:700;" onkeyup="if(event.key==='Enter')validatePin()">
+    <p id="pin-error">❌ Code PIN incorrect</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-pin')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="validatePin()">✅ Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="confirm-title">Confirmer</h3>
+    <p id="confirm-msg" style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-confirm')">Annuler</button>
+      <button class="btn btn-red" style="flex:1" id="confirm-btn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-contact-title">Nouveau Contact</h3>
+    <input type="hidden" id="c-id">
+    <div class="form-group"><label class="form-label">Nom complet *</label><input class="form-input" id="c-name" placeholder="Ex: Moussa Amadou"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Téléphone *</label><input class="form-input" id="c-phone" type="tel" placeholder="0196000000"></div>
+      <div class="form-group">
+        <label class="form-label">Ville / Village</label>
+        <select class="form-select" id="c-city" onchange="onCityChange()">
+          <option value="">-- Choisir --</option>
+          <optgroup label="📍 Commune de Kandi"><option>Kandi</option><option>Angaradébou</option><option>Bensékou</option><option>Donwari</option><option>Kassakou</option><option>Saah</option><option>Sam</option><option>Sonsoro</option><option>Gansosso</option><option>Alfakoara</option><option>Kpalolo</option><option>Soundou</option><option>Sidérou</option><option>Tissarou</option></optgroup>
+          <optgroup label="🌾 Commune de Banikoara"><option>Banikoara</option><option>Founougo</option><option>Gomparou</option><option>Goumori</option><option>Kokey</option><option>Kokiborou</option><option>Ounet</option><option>Sompérékou</option><option>Soroko</option><option>Toura</option></optgroup>
+          <optgroup label="🌾 Commune de Gogounou"><option>Gogounou</option><option>Bagou</option><option>Gounarou</option><option>Ouara</option><option>Sori</option><option>Zoungou-Pantrossi</option></optgroup>
+          <optgroup label="🌾 Commune de Malanville"><option>Malanville</option><option>Garou</option><option>Guéné</option><option>Madécali</option><option>Toumboutou</option><option>Monkassa</option><option>Goun-Goun</option></optgroup>
+          <optgroup label="🌾 Commune de Ségbana"><option>Ségbana</option><option>Liboussou</option><option>Lougou</option><option>Sokotindji</option></optgroup>
+          <optgroup label="🌾 Commune de Karimama"><option>Karimama</option><option>Bogo-Bogo</option><option>Kompa</option><option>Monsey</option><option>Birni Lafia</option></optgroup>
+          <optgroup label="🏙️ Autres villes"><option>Bembéréké</option><option>Nikki</option><option>Parakou</option><option>Ndali</option><option>Pèrèrè</option><option>Tchaourou</option><option>Djougou</option><option>Natitingou</option><option>Cotonou</option><option>Porto-Novo</option><option>Abomey-Calavi</option></optgroup>
+          <option value="Autre">✏️ Autre...</option>
+        </select>
+        <input class="form-input" id="c-city-custom" type="text" placeholder="Saisir..." style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Catégorie *</label>
+      <select class="form-select" id="c-cat">
+        <option value="kandi">📍 Client à Kandi</option>
+        <option value="hors">🚌 Client hors Kandi</option>
+        <option value="villageois">🌾 Villageois</option>
+        <option value="eleve">📚 Élève / Étudiant</option>
+        <option value="vip">⭐ VIP / Fidèle</option>
+        <option value="prospect">🎯 Prospect</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Dernier service</label><input class="form-input" id="c-service" placeholder="Ex: Logo, T-shirt..."></div>
+    <div class="form-group"><label class="form-label">Note</label><input class="form-input" id="c-note" placeholder="Note libre..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-contact')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveContact()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMMANDE -->
+<div class="modal-overlay" id="modal-commande">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-cmd-title">Nouvelle Commande</h3>
+    <input type="hidden" id="cmd-id">
+    <div class="form-group"><label class="form-label">Client *</label>
+      <select class="form-select" id="cmd-client"><option value="">-- Choisir --</option></select>
+      <input class="form-input" id="cmd-client-custom" type="text" placeholder="Nom du client..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-group"><label class="form-label">Service *</label>
+      <select class="form-select" id="cmd-service"><option value="">-- Choisir --</option></select>
+      <input class="form-input" id="cmd-service-custom" type="text" placeholder="Décrire le service..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Montant (F)</label><input class="form-input" id="cmd-montant" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Coût variable (F)</label><input class="form-input" id="cmd-cout" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Avance (F)</label><input class="form-input" id="cmd-avance" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Date livraison</label><input class="form-input" id="cmd-deadline" type="date"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Statut</label>
+      <select class="form-select" id="cmd-statut">
+        <option value="en_attente">⏳ En attente</option>
+        <option value="en_cours">🔄 En cours</option>
+        <option value="termine">✅ Terminé</option>
+        <option value="livre">📦 Livré</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Note / Instructions</label><textarea class="form-textarea" id="cmd-note" placeholder="Détails..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-commande')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCommande()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMMANDE DETAIL -->
+<div class="modal-overlay" id="modal-cmd-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Commande</h3>
+    <div id="cmd-detail-content"></div>
+    <div class="modal-actions" id="cmd-detail-actions"></div>
+  </div>
+</div>
+
+<!-- REÇU -->
+<div class="modal-overlay" id="modal-recu">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>🧾 Reçu / Facture</h3>
+    <div id="receipt-preview"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeModal('modal-recu')">Fermer</button>
+      <button class="btn btn-gold" style="flex:1" onclick="printReceipt()">🖨️ Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECETTE SIMPLE -->
+<div class="modal-overlay" id="modal-recette">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>💵 Recette du jour</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Pour services payés cash sans commande associée.</p>
+    <div class="form-group"><label class="form-label">Service *</label>
+      <select class="form-select" id="r-desc" onchange="onRecetteServiceChange()"><option value="">-- Choisir --</option></select>
+      <input class="form-input" id="r-desc-custom" type="text" placeholder="Saisir le service..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-group"><label class="form-label">Montant (F) *</label><input class="form-input" id="r-amount" type="number" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Client</label>
+      <select class="form-select" id="r-client" onchange="onRecetteClientChange()"><option value="">-- Optionnel --</option></select>
+      <input class="form-input" id="r-client-custom" type="text" placeholder="Nom du client..." style="display:none;margin-top:6px;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-recette')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveRecette()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENCAISSEMENT -->
+<div class="modal-overlay" id="modal-encaissement">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>💰 Encaisser</h3>
+    <input type="hidden" id="enc-cmd-id">
+    <div id="enc-cmd-info" style="background:rgba(255,210,0,0.06);border:1px solid rgba(255,210,0,0.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;line-height:1.7;"></div>
+    <div class="form-group"><label class="form-label">Montant encaissé (F) *</label><input class="form-input" id="enc-amount" type="number" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Nouveau statut</label>
+      <select class="form-select" id="enc-statut">
+        <option value="en_cours">🔄 En cours</option>
+        <option value="termine">✅ Terminé</option>
+        <option value="livre">📦 Livré</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-encaissement')">Annuler</button>
+      <button class="btn btn-green" style="flex:1" onclick="saveEncaissement()">💰 Encaisser</button>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK -->
+<div class="modal-overlay" id="modal-stock">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-stock-title">Matière Première</h3>
+    <input type="hidden" id="s-id">
+    <div class="form-group"><label class="form-label">Nom *</label><input class="form-input" id="s-name" placeholder="Ex: Mugs blancs"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Unité</label><input class="form-input" id="s-unit" placeholder="pcs, ramettes..."></div>
+      <div class="form-group"><label class="form-label">Quantité *</label><input class="form-input" id="s-qty" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Seuil alerte</label><input class="form-input" id="s-alert" type="number" placeholder="5"></div>
+      <div class="form-group"><label class="form-label">Prix unitaire (F)</label><input class="form-input" id="s-price" type="number" placeholder="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-stock')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveStock()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK ADJ -->
+<div class="modal-overlay" id="modal-stock-adj">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Ajuster le stock</h3>
+    <input type="hidden" id="sadj-id">
+    <p id="sadj-name-label" style="font-size:13px;color:var(--muted);margin-bottom:14px;"></p>
+    <div class="form-group"><label class="form-label">Nouvelle quantité</label><input class="form-input" id="sadj-qty" type="number" placeholder="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-stock-adj')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveStockAdj()">Mettre à jour</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATALOGUE ITEM -->
+<div class="modal-overlay" id="modal-cat-item">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Service / Prix</h3>
+    <input type="hidden" id="ci-id">
+    <div class="form-group"><label class="form-label">Catégorie</label><input class="form-input" id="ci-cat" placeholder="Ex: Impression, Photo..."></div>
+    <div class="form-group"><label class="form-label">Nom du service *</label><input class="form-input" id="ci-name" placeholder="Ex: T-shirt personnalisé"></div>
+    <div class="form-group"><label class="form-label">Détail</label><input class="form-input" id="ci-detail" placeholder="Ex: Presse à chaud, 1 face"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Prix de vente (F) *</label><input class="form-input" id="ci-price" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Coût variable (F)</label><input class="form-input" id="ci-cost" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Unité</label><input class="form-input" id="ci-unit" placeholder="Ex: /page, /m²"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-cat-item')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCatItem()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHARGES -->
+<div class="modal-overlay" id="modal-charge">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-charge-title">Charge</h3>
+    <input type="hidden" id="ch-id">
+    <div class="form-group"><label class="form-label">Nom *</label><input class="form-input" id="ch-name" placeholder="Ex: Loyer, Électricité..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Montant mensuel (F) *</label><input class="form-input" id="ch-montant" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <select class="form-select" id="ch-categorie">
+          <option value="fixe">🔒 Fixe</option>
+          <option value="variable">🔄 Variable</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-charge')">Annuler</button>
+      <button class="btn btn-gold" style="flex:1" onclick="saveCharge()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════
+// FIREBASE CONFIG
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBaONRrGGDmWrw5ImzUCvPTF8UHIofGeAI",
+  authDomain: "slg-kandi.firebaseapp.com",
+  databaseURL: "https://slg-kandi-default-rtdb.firebaseio.com",
+  projectId: "slg-kandi",
+  storageBucket: "slg-kandi.firebasestorage.app",
+  messagingSenderId: "778728074415",
+  appId: "1:778728074415:web:239d1da686e6f644cdf85a"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const auth = firebase.auth();
+
+// ══════════════════════════════════════════════
+// ROLES & PERMISSIONS
+// ══════════════════════════════════════════════
+const ROLES = {
+  'tmcu16@gmail.com':   { name:'Dir. Technique', level:3 },
+  'peuguya@gmail.com':  { name:'Directrice',     level:3 },
+};
+// level 3 = admin complet | level 2 = secrétaire | level 1 = associé
+let currentUser = null;
+let userRole = null;
+let isAdmin = false;
+
+function getRole(email) {
+  return ROLES[email] || { name:'Associé', level:1 };
+}
+function canDelete()  { return userRole && userRole.level >= 3; }
+function canViewBilan(){ return userRole && userRole.level >= 2; }
+function canEditCat() { return userRole && userRole.level >= 3; }
+
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const DEFAULT_STOCK = [
+  {id:'s1',name:'Encres sublimation',unit:'flacons',qty:3,alert:2,price:5000},
+  {id:'s2',name:'Papier sublimation',unit:'feuilles',qty:50,alert:20,price:100},
+  {id:'s3',name:'Mugs blancs',unit:'pcs',qty:12,alert:5,price:500},
+  {id:'s4',name:'T-shirts vierges',unit:'pcs',qty:8,alert:5,price:1500},
+  {id:'s5',name:'Plaques porte-clés',unit:'pcs',qty:20,alert:10,price:200},
+  {id:'s6',name:'Papier A4',unit:'ramettes',qty:4,alert:2,price:2500},
+  {id:'s7',name:'Cartouches imprimante',unit:'pcs',qty:2,alert:1,price:8000},
+];
+const DEFAULT_CATALOGUE = [
+  {id:'c1',cat:'Impression & Documents',name:'Photocopie N&B',detail:'Format A4',price:25,unit:'/page',cost:8},
+  {id:'c2',cat:'Impression & Documents',name:'Impression N&B',detail:'Document texte',price:50,unit:'/page',cost:12},
+  {id:'c3',cat:'Impression & Documents',name:'Impression couleur',detail:'Format A4',price:150,unit:'/page',cost:50},
+  {id:'c4',cat:'Impression & Documents',name:'Saisie document',detail:'Par page rédigée',price:200,unit:'/page',cost:0},
+  {id:'c5',cat:'Impression & Documents',name:'Scan',detail:'Numérisation',price:100,unit:'/page',cost:0},
+  {id:'c6',cat:'Photo & Portraits',name:'Photo identité',detail:'4 photos imprimées',price:500,unit:'',cost:100},
+  {id:'c7',cat:'Photo & Portraits',name:'Portrait individuel',detail:'Tirage 10x15',price:500,unit:'',cost:80},
+  {id:'c8',cat:'Photo & Portraits',name:'Photo de famille',detail:'Tirage A4',price:1000,unit:'',cost:150},
+  {id:'c9',cat:'Photo & Portraits',name:'Tableau photo encadré',detail:'Format 30x40',price:3500,unit:'',cost:1200},
+  {id:'c10',cat:'Personnalisation',name:'T-shirt personnalisé',detail:'Presse à chaud, 1 face',price:2500,unit:'',cost:900},
+  {id:'c11',cat:'Personnalisation',name:'Tasse personnalisée',detail:'Photo + texte',price:2000,unit:'',cost:600},
+  {id:'c12',cat:'Personnalisation',name:'Porte-clé',detail:'Photo ou logo',price:500,unit:'',cost:150},
+  {id:'c13',cat:'Services Pro',name:'Carte de visite',detail:'Lot de 100',price:3000,unit:'',cost:800},
+  {id:'c14',cat:'Services Pro',name:'Facturier',detail:'50 feuillets',price:2500,unit:'',cost:700},
+  {id:'c15',cat:'Services Pro',name:'Cachet / Tampon',detail:'Sur mesure',price:5000,unit:'',cost:2000},
+  {id:'c16',cat:'Services Pro',name:'Maintenance informatique',detail:'Diagnostic & dépannage',price:2000,unit:'+',cost:0},
+  {id:'c17',cat:'Conception Graphique',name:'Logo simple',detail:'1 concept',price:7000,unit:'',cost:0},
+  {id:'c18',cat:'Conception Graphique',name:'Logo professionnel',detail:'Plusieurs variantes',price:20000,unit:'',cost:0},
+  {id:'c19',cat:'Conception Graphique',name:'Affiche / Flyer',detail:'Mise en page',price:5000,unit:'',cost:0},
+  {id:'c20',cat:'Conception Graphique',name:"Carte d'invitation",detail:'Mariage, baptême...',price:5000,unit:'',cost:0},
+  {id:'c21',cat:'Conception Graphique',name:'Maquette document',detail:'Rapport, brochure...',price:15000,unit:'',cost:0},
+  {id:'c22',cat:'Conception Graphique',name:'Montage photo',detail:'Retouche, composition',price:7000,unit:'',cost:0},
+  {id:'c23',cat:'Impression Grand Format',name:'A0 / Bannière',detail:'Haute résolution',price:5000,unit:'',cost:1500},
+  {id:'c24',cat:'Impression Grand Format',name:'Bâche publicitaire',detail:'Impression plein air',price:5000,unit:'/m²',cost:2000},
+  {id:'c25',cat:'Impression Grand Format',name:'Roll-up complet',detail:'Impression + structure',price:35000,unit:'',cost:15000},
+];
+const DEFAULT_CHARGES = [
+  {id:'ch1',name:'Loyer',montant:30000,categorie:'fixe'},
+  {id:'ch2',name:'Électricité',montant:10000,categorie:'fixe'},
+  {id:'ch3',name:'Communication',montant:7000,categorie:'fixe'},
+  {id:'ch4',name:'Eau',montant:2000,categorie:'fixe'},
+  {id:'ch5',name:"Salaire / Main d'œuvre",montant:50000,categorie:'fixe'},
+  {id:'ch6',name:'Transport',montant:5000,categorie:'fixe'},
+];
+
+let DB = { contacts:[], commandes:[], stock:DEFAULT_STOCK, recettes:[], catalogue:DEFAULT_CATALOGUE, charges:DEFAULT_CHARGES };
+
+// Numérotation auto commandes
+let cmdCounter = 0;
+function nextCmdNum() {
+  cmdCounter++;
+  const y = new Date().getFullYear();
+  const m = String(new Date().getMonth()+1).padStart(2,'0');
+  return 'SLG-'+y+m+'-'+String(cmdCounter).padStart(3,'0');
+}
+
+// ══════════════════════════════════════════════
+// FIREBASE SAVE / LOAD
+// ══════════════════════════════════════════════
+function toObj(arr) { return arr.reduce(function(o,i){ o[i.id]=i; return o; }, {}); }
+
+function save() {
+  database.ref('slg').set({
+    contacts:  toObj(DB.contacts),
+    commandes: toObj(DB.commandes),
+    recettes:  toObj(DB.recettes),
+    stock:     toObj(DB.stock),
+    catalogue: toObj(DB.catalogue),
+    charges:   toObj(DB.charges),
+  }).then(function(){ showSync('✅ Sauvegardé','var(--green)'); })
+    .catch(function(){ showSync('⚠️ Erreur sync','var(--red)'); });
+}
+
+function showSync(msg, color) {
+  var el = document.getElementById('sync-status');
+  el.style.color = color||'var(--gold)';
+  el.style.opacity = '1';
+  el.textContent = msg;
+  setTimeout(function(){ el.style.opacity='0'; }, 2500);
+}
+
+function showToast(msg, color) {
+  var el = document.getElementById('toast');
+  el.style.color = color||'var(--text)';
+  el.style.opacity = '1';
+  el.textContent = msg;
+  setTimeout(function(){ el.style.opacity='0'; }, 2500);
+}
+
+// ══════════════════════════════════════════════
+// COMPAT HELPERS (ancien + nouveau format)
+// ══════════════════════════════════════════════
+function getMontant(c){ return Number(c.montant||c.prix||0); }
+function getAvance(c) { return Number(c.avance||c.acompte||0); }
+function getCout(c)   { return Number(c.cout||0); }
+function getNote(c)   { return c.note||c.desc||''; }
+function getDeadline(c){ return c.deadline||c.livraison||''; }
+function getService(c){ return c.service||c.desc||''; }
+function getCommandeDate(c) {
+  if(c.date) return c.date.slice(0,7);
+  if(c.created) { try{ var d=new Date(Number(c.created)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }catch(e){} }
+  return null;
+}
+function isOverdue(c) {
+  var dl = getDeadline(c);
+  if(!dl) return false;
+  if(c.statut==='livre'||c.statut==='termine') return false;
+  return new Date(dl) < new Date();
+}
+
+function fmt(n){ return Number(n||0).toLocaleString('fr-FR')+' F'; }
+function today(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function todayLabel(){
+  return new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function doLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  var pass  = document.getElementById('login-password').value;
+  var err   = document.getElementById('login-error');
+  err.style.display='none';
+  if(!email||!pass){ err.textContent='Email et mot de passe requis.'; err.style.display='block'; return; }
+  auth.signInWithEmailAndPassword(email,pass).catch(function(e){
+    err.textContent = '❌ Email ou mot de passe incorrect.';
+    err.style.display='block';
+  });
+}
+
+function doLogout() {
+  confirmAction('Déconnexion','Voulez-vous vous déconnecter ?', function(){ auth.signOut(); });
+}
+
+auth.onAuthStateChanged(function(user) {
+  if(user) {
+    currentUser = user;
+    userRole = getRole(user.email);
+    isAdmin = userRole.level >= 3;
+    // Masquer bilan si non autorisé
+    if(!canViewBilan()) document.getElementById('nav-bilan').style.display='none';
+    if(!isAdmin) document.getElementById('nav-users').style.display='none';
+    document.getElementById('h-role').textContent = userRole.name;
+    // Charger données Firebase
+    database.ref('slg').on('value', function(snap) {
+      var data = snap.val();
+      if(data) {
+        DB.contacts  = data.contacts  ? Object.values(data.contacts)  : [];
+        DB.commandes = data.commandes ? Object.values(data.commandes) : [];
+        DB.recettes  = data.recettes  ? Object.values(data.recettes)  : [];
+        DB.stock     = data.stock     ? Object.values(data.stock)     : DEFAULT_STOCK;
+        DB.catalogue = data.catalogue ? Object.values(data.catalogue) : DEFAULT_CATALOGUE;
+        DB.charges   = data.charges   ? Object.values(data.charges)   : DEFAULT_CHARGES;
+        // Calculer le dernier numéro de commande
+        DB.commandes.forEach(function(c){ if(c.num){ var n=parseInt(c.num.split('-')[2]); if(n>cmdCounter)cmdCounter=n; } });
+      }
+      // Si charges vides dans Firebase, initialiser avec DEFAULT_CHARGES
+      if(!data || !data.charges) {
+        DB.charges = DEFAULT_CHARGES;
+        save();
+      }
+      showSync('🔄 Synchronisé','var(--green)');
+      renderDashboard();
+    });
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+  } else {
+    currentUser=null; userRole=null; isAdmin=false;
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+});
+
+// ══════════════════════════════════════════════
+// PIN & CONFIRM
+// ══════════════════════════════════════════════
+const ADMIN_PIN = '0000';
+var _pinCb = null;
+
+function checkPin(action, cb) {
+  if(!isAdmin){ showToast('❌ Réservé aux administrateurs.','var(--red)'); return; }
+  _pinCb = cb;
+  document.getElementById('pin-action-label').textContent = 'Action : '+action;
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  openModal('modal-pin');
+  setTimeout(function(){ document.getElementById('pin-input').focus(); },300);
+}
+
+function validatePin() {
+  if(document.getElementById('pin-input').value===customPin) {
+    closeModal('modal-pin');
+    if(_pinCb){ _pinCb(); _pinCb=null; }
+  } else {
+    document.getElementById('pin-error').style.display='block';
+    document.getElementById('pin-input').value='';
+  }
+}
+
+function confirmAction(title,msg,cb) {
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-btn').onclick=function(){ closeModal('modal-confirm'); cb(); };
+  openModal('modal-confirm');
+}
+
+// ══════════════════════════════════════════════
+// NAV & PAGES
+// ══════════════════════════════════════════════
+function showPage(p, el) {
+  if(p==='bilan'&&!canViewBilan()){ showToast('❌ Accès refusé','var(--red)'); return; }
+  document.querySelectorAll('.page').forEach(function(x){ x.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(x){ x.classList.remove('active'); });
+  document.getElementById('page-'+p).classList.add('active');
+  if(el) el.classList.add('active');
+  if(p==='dashboard') renderDashboard();
+  if(p==='contacts')  renderContacts('');
+  if(p==='commandes') renderOrders('tous');
+  if(p==='stock')     renderStock();
+  if(p==='catalogue') renderCatalogue();
+  if(p==='bilan')     { populateBilanMonths(); renderBilan(); }
+  if(p==='wa')        { renderWaContactSelect(); showWaMsg('kandi'); }
+  if(p==='users')     { renderUsersList(); }
+  if(p==='commandes') { checkAutoCloture(); }
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', function(e){
+  if(e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+  var card = e.target.closest('.order-card-item');
+  if(card&&card.dataset.id) viewOrder(card.dataset.id);
+  var arch = e.target.closest('.cmd-archived');
+  if(arch&&arch.dataset.id) viewArchivedOrder(arch.dataset.id);
+});
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard() {
+  var todayStr = today();
+  var todayRec = DB.recettes.filter(function(r){ return r.date===todayStr; });
+  var totalToday = todayRec.reduce(function(s,r){ return s+Number(r.amount||0); },0);
+  var cmdActives = DB.commandes.filter(function(c){ return c.statut==='en_cours'||c.statut==='en_attente'; }).length;
+  var lowStock   = DB.stock.filter(function(s){ return Number(s.qty)<=Number(s.alert); });
+  var overdue    = DB.commandes.filter(function(c){ return isOverdue(c); });
+
+  document.getElementById('db-recettes-count').textContent = todayRec.length;
+  document.getElementById('db-recettes-amount').textContent = fmt(totalToday);
+  document.getElementById('db-commandes-count').textContent = cmdActives;
+  document.getElementById('db-contacts-count').textContent  = DB.contacts.length;
+  document.getElementById('db-alerts-count').textContent    = lowStock.length;
+
+  // Badge retard
+  var badge = document.getElementById('badge-retard');
+  if(overdue.length>0){ badge.style.display='flex'; badge.textContent=overdue.length; }
+  else badge.style.display='none';
+
+  // Alertes stock
+  document.getElementById('stock-alerts-db').innerHTML = lowStock.slice(0,3).map(function(s){
+    return '<div class="alert alert-'+(Number(s.qty)===0?'red':'orange')+'">⚠️ <strong>'+s.name+'</strong> — '+s.qty+' '+s.unit+' restant(s)</div>';
+  }).join('');
+
+  // Alertes retard
+  document.getElementById('retard-alerts-db').innerHTML = overdue.slice(0,2).map(function(c){
+    return '<div class="alert alert-red">🕐 Retard : <strong>'+c.client+'</strong> — '+getService(c)+' (livraison: '+getDeadline(c)+')</div>';
+  }).join('');
+
+  // Graphique 7 jours
+  renderChart7Days();
+
+  // Commandes récentes
+  var currentMonth=getCurrentMonth();
+  var recent = DB.commandes.filter(function(c){
+    return getCommandeDate(c)===currentMonth && !c.archived;
+  }).sort(function(a,b){ return (b.created||0)-(a.created||0); }).slice(0,5);
+  var recDiv = document.getElementById('recent-orders');
+  recDiv.innerHTML = recent.length ? recent.map(orderCard).join('') : '<div class="empty"><p>Aucune commande.</p></div>';
+
+  // Caisse
+  var caisseDiv = document.getElementById('today-caisse');
+  if(!todayRec.length) {
+    caisseDiv.innerHTML = '<div class="empty"><p>Aucune recette aujourd\'hui.</p></div>';
+  } else {
+    caisseDiv.innerHTML = todayRec.map(function(r){
+      return '<div class="bilan-row"><span class="bl-label">'+r.desc+(r.client?' — '+r.client:'')+(r.cmdId?' 🔗':'')+'</span><div style="display:flex;align-items:center;gap:8px;"><span class="bl-val" style="color:var(--green)">'+fmt(r.amount)+'</span><button onclick="deleteRecette(\''+r.id+'\')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;">🗑️</button></div></div>';
+    }).join('') + '<div class="bilan-total" style="margin-top:10px;"><span class="bt-label">Total du jour</span><span class="bt-val">'+fmt(totalToday)+'</span></div>';
+  }
+}
+
+function renderChart7Days() {
+  var bars = document.getElementById('chart-bars');
+  var days = [];
+  for(var i=6;i>=0;i--){
+    var d = new Date(); d.setDate(d.getDate()-i);
+    var ds = d.toISOString().slice(0,10);
+    var total = DB.recettes.filter(function(r){ return r.date===ds; }).reduce(function(s,r){ return s+Number(r.amount||0); },0);
+    var label = d.toLocaleDateString('fr-FR',{weekday:'short'}).slice(0,3);
+    days.push({label:label,total:total,ds:ds});
+  }
+  var max = Math.max.apply(null, days.map(function(d){ return d.total; })) || 1;
+  bars.innerHTML = days.map(function(d){
+    var h = Math.max(4,Math.round((d.total/max)*90));
+    var isToday = d.ds===today();
+    return '<div class="bar-col"><div class="bar-val">'+( d.total>0 ? Math.round(d.total/1000)+'k' : '' )+'</div><div class="bar" style="height:'+h+'px;opacity:'+(isToday?1:0.6)+';"></div><div class="bar-label" style="color:'+(isToday?'var(--gold)':'var(--muted)')+'">'+d.label+'</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// CONTACTS
+// ══════════════════════════════════════════════
+var CATS = {
+  kandi:     {label:'Client Kandi',   color:'#3B82F6',bg:'rgba(59,130,246,0.12)',ico:'📍'},
+  hors:      {label:'Hors Kandi',     color:'#8B5CF6',bg:'rgba(139,92,246,0.12)',ico:'🚌'},
+  villageois:{label:'Villageois',     color:'#10B981',bg:'rgba(16,185,129,0.12)',ico:'🌾'},
+  eleve:     {label:'Élève',          color:'#06B6D4',bg:'rgba(6,182,212,0.12)', ico:'📚'},
+  vip:       {label:'VIP / Fidèle',   color:'#FFD200',bg:'rgba(255,210,0,0.12)', ico:'⭐'},
+  prospect:  {label:'Prospect',       color:'#F97316',bg:'rgba(249,115,22,0.12)',ico:'🎯'},
+};
+var currentContactCat = 'tous';
+
+function filterContacts(cat,el){
+  currentContactCat=cat;
+  document.querySelectorAll('#page-contacts .mini-tab').forEach(function(t){ t.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  renderContacts(document.getElementById('contact-search').value);
+}
+
+function renderContacts(search) {
+  var list = document.getElementById('contacts-list');
+  var data = DB.contacts.filter(function(c){
+    var matchCat = currentContactCat==='tous'||c.cat===currentContactCat;
+    var matchS   = !search||c.name.toLowerCase().includes(search.toLowerCase())||(c.phone||'').includes(search);
+    return matchCat&&matchS;
+  });
+  if(!data.length){ list.innerHTML='<div class="empty"><div class="empty-ico">👥</div><p>Aucun contact.</p></div>'; return; }
+  list.innerHTML = data.map(function(c){
+    var cat=CATS[c.cat]||CATS.kandi;
+    var init=c.name.split(' ').map(function(w){ return w[0]; }).join('').toUpperCase().slice(0,2);
+    return '<div class="list-item"><div class="item-ico" style="background:'+cat.bg+';color:'+cat.color+'">'+init+'</div><div class="item-info"><div class="item-name">'+c.name+'</div><div class="item-sub">'+c.phone+(c.city?' • '+c.city:'')+'</div><span class="badge" style="background:'+cat.bg+';color:'+cat.color+'">'+cat.ico+' '+cat.label+'</span></div><div class="item-actions"><button class="icon-btn" onclick="sendWaToContact(\''+c.id+'\')" title="WhatsApp">💬</button><button class="icon-btn" onclick="editContact(\''+c.id+'\')" title="Modifier">✏️</button><button class="icon-btn" style="color:var(--red)" onclick="deleteContact(\''+c.id+'\')" title="Supprimer">🗑️</button></div></div>';
+  }).join('');
+}
+
+function openModal_contact_new(){
+  document.getElementById('modal-contact-title').textContent='Nouveau Contact';
+  document.getElementById('c-id').value='';
+  ['c-name','c-phone','c-service','c-note'].forEach(function(f){ document.getElementById(f).value=''; });
+  document.getElementById('c-city').value='';
+  document.getElementById('c-city-custom').style.display='none';
+  document.getElementById('c-cat').value='kandi';
+  openModal('modal-contact');
+}
+
+function onCityChange(){
+  var sel=document.getElementById('c-city');
+  var inp=document.getElementById('c-city-custom');
+  if(sel.value==='Autre'){ inp.style.display='block'; inp.focus(); }
+  else{ inp.style.display='none'; inp.value=''; }
+}
+
+function editContact(id){
+  var c=DB.contacts.find(function(x){ return x.id===id; }); if(!c) return;
+  document.getElementById('modal-contact-title').textContent='Modifier Contact';
+  document.getElementById('c-id').value=id;
+  document.getElementById('c-name').value=c.name;
+  document.getElementById('c-phone').value=c.phone;
+  document.getElementById('c-cat').value=c.cat||'kandi';
+  document.getElementById('c-service').value=c.service||'';
+  document.getElementById('c-note').value=c.note||'';
+  var citySel=document.getElementById('c-city');
+  var cityInp=document.getElementById('c-city-custom');
+  var known=['Kandi','Angaradébou','Bensékou','Donwari','Kassakou','Saah','Sam','Sonsoro','Gansosso','Alfakoara','Kpalolo','Soundou','Sidérou','Tissarou','Banikoara','Founougo','Gomparou','Goumori','Kokey','Kokiborou','Ounet','Sompérékou','Soroko','Toura','Gogounou','Bagou','Gounarou','Ouara','Sori','Zoungou-Pantrossi','Malanville','Garou','Guéné','Madécali','Toumboutou','Monkassa','Goun-Goun','Ségbana','Liboussou','Lougou','Sokotindji','Karimama','Bogo-Bogo','Kompa','Monsey','Birni Lafia','Bembéréké','Nikki','Parakou','Ndali','Pèrèrè','Tchaourou','Djougou','Natitingou','Cotonou','Porto-Novo','Abomey-Calavi','Autre'];
+  if(c.city&&!known.includes(c.city)){ citySel.value='Autre'; cityInp.style.display='block'; cityInp.value=c.city; }
+  else{ citySel.value=c.city||''; cityInp.style.display='none'; cityInp.value=''; }
+  openModal('modal-contact');
+}
+
+function saveContact(){
+  var name=document.getElementById('c-name').value.trim();
+  var phone=document.getElementById('c-phone').value.trim();
+  if(!name||!phone){ showToast('Nom et téléphone requis.','var(--red)'); return; }
+  var id=document.getElementById('c-id').value;
+  var cityS=document.getElementById('c-city').value;
+  var cityC=document.getElementById('c-city-custom').value.trim();
+  var data={id:id||uid(),name:name,phone:phone,city:cityS==='Autre'?cityC:cityS,cat:document.getElementById('c-cat').value,service:document.getElementById('c-service').value.trim(),note:document.getElementById('c-note').value.trim(),created:Date.now()};
+  if(id){ var i=DB.contacts.findIndex(function(c){ return c.id===id; }); DB.contacts[i]=data; }
+  else DB.contacts.push(data);
+  save(); closeModal('modal-contact'); renderContacts('');
+}
+
+function deleteContact(id){
+  checkPin('supprimer ce contact',function(){
+    confirmAction('Supprimer','Supprimer ce contact définitivement ?',function(){
+      DB.contacts=DB.contacts.filter(function(c){ return c.id!==id; });
+      save(); renderContacts('');
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// COMMANDES
+// ══════════════════════════════════════════════
+var ORDER_STATUS={
+  en_attente:{label:'En attente',cls:'badge-pending'},
+  en_cours:{label:'En cours',cls:'badge-progress'},
+  termine:{label:'Terminé',cls:'badge-done'},
+  livre:{label:'Livré',cls:'badge-delivered'},
+};
+var currentOrderCat='tous';
+
+function filterOrders(cat,el){
+  currentOrderCat=cat;
+  document.querySelectorAll('#page-commandes .mini-tab').forEach(function(t){ t.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  renderOrders(cat);
+}
+
+function orderCard(c){
+  var st=ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+  var reste=getMontant(c)-getAvance(c);
+  var overdueBorder=isOverdue(c)?'border-color:var(--red);':'';
+  var num=c.num?'<span style="font-size:9px;color:var(--muted);font-family:monospace;">'+c.num+'</span>':'';
+  return '<div class="list-item order-card-item" data-id="'+c.id+'" style="cursor:pointer;'+overdueBorder+'"><div class="item-ico" style="background:rgba(255,210,0,0.08);color:var(--gold);font-size:20px;">📋</div><div class="item-info"><div class="item-name">'+(c.client||'—')+'</div>'+num+'<div class="item-sub">'+getService(c)+(isOverdue(c)?' ⚠️ En retard':'')+'</div><div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap;"><span class="badge '+st.cls+'">'+st.label+'</span><span style="font-size:10px;color:var(--gold);font-weight:600;">'+fmt(getMontant(c))+'</span>'+(reste>0?'<span style="font-size:10px;color:var(--red);">Reste: '+fmt(reste)+'</span>':'')+'</div></div></div>';
+}
+
+function renderOrders(cat){
+  var list=document.getElementById('orders-list');
+  var currentMonth=getCurrentMonth();
+  // Label mois en cours
+  var lbl=document.getElementById('cmd-month-label');
+  if(lbl) lbl.textContent=formatMonth(currentMonth).toUpperCase();
+  // Filtrer uniquement le mois en cours (non archivées)
+  var data=DB.commandes.filter(function(c){
+    var m=getCommandeDate(c);
+    if(m!==currentMonth) return false; // autre mois
+    if(c.archived) return false; // clôturé manuellement
+    if(cat==='retard') return isOverdue(c);
+    if(cat==='tous') return true;
+    return c.statut===cat;
+  });
+  data.sort(function(a,b){ return (b.created||0)-(a.created||0); });
+  // Compter les archives
+  var archiveCount=DB.commandes.filter(function(c){
+    var m=getCommandeDate(c);
+    return m&&(m<currentMonth||c.archived);
+  }).length;
+  var btn=document.getElementById('btn-archives');
+  if(btn&&archiveCount>0) btn.textContent='📁 Archives ('+archiveCount+')';
+  list.innerHTML=data.length?data.map(orderCard).join(''):'<div class="empty"><div class="empty-ico">📋</div><p>Aucune commande ce mois.</p></div>';
+}
+
+function openModal_commande_new(){
+  document.getElementById('modal-cmd-title').textContent='Nouvelle Commande';
+  document.getElementById('cmd-id').value='';
+  ['cmd-montant','cmd-cout','cmd-avance','cmd-deadline','cmd-note'].forEach(function(f){ document.getElementById(f).value=''; });
+  document.getElementById('cmd-statut').value='en_attente';
+  document.getElementById('cmd-client-custom').style.display='none';
+  document.getElementById('cmd-service-custom').style.display='none';
+  populateCmdSelects();
+  openModal('modal-commande');
+}
+
+function populateCmdSelects(){
+  var cSel=document.getElementById('cmd-client');
+  cSel.innerHTML='<option value="">-- Choisir --</option>'+DB.contacts.map(function(c){ return '<option value="'+c.name+'">'+c.name+(c.phone?' ('+c.phone+')':'')+'</option>'; }).join('')+'<option value="__autre__">✏️ Autre...</option>';
+  cSel.onchange=function(){
+    var cc=document.getElementById('cmd-client-custom');
+    if(this.value==='__autre__'){ cc.style.display='block'; cc.focus(); }
+    else{ cc.style.display='none'; cc.value=''; }
+  };
+  var sSel=document.getElementById('cmd-service');
+  var cats=[...new Set(DB.catalogue.map(function(c){ return c.cat; }))];
+  var opts='<option value="">-- Choisir --</option>';
+  cats.forEach(function(cat){
+    opts+='<optgroup label="'+cat+'">';
+    DB.catalogue.filter(function(c){ return c.cat===cat; }).forEach(function(c){
+      opts+='<option value="'+c.name+'">'+c.name+' — '+c.price.toLocaleString('fr-FR')+' F'+(c.unit||'')+'</option>';
+    });
+    opts+='</optgroup>';
+  });
+  opts+='<option value="__autre__">✏️ Autre...</option>';
+  sSel.innerHTML=opts;
+  sSel.onchange=function(){
+    var sc=document.getElementById('cmd-service-custom');
+    if(this.value==='__autre__'){ sc.style.display='block'; sc.focus(); }
+    else{
+      sc.style.display='none'; sc.value='';
+      var item=DB.catalogue.find(function(c){ return c.name===sSel.value; });
+      if(item){
+        if(!document.getElementById('cmd-montant').value) document.getElementById('cmd-montant').value=item.price;
+        if(!document.getElementById('cmd-cout').value) document.getElementById('cmd-cout').value=item.cost||0;
+      }
+    }
+  };
+}
+
+function saveCommande(){
+  var clientS=document.getElementById('cmd-client').value.trim();
+  var clientC=document.getElementById('cmd-client-custom').value.trim();
+  var client=clientS==='__autre__'?clientC:clientS;
+  var serviceS=document.getElementById('cmd-service').value.trim();
+  var serviceC=document.getElementById('cmd-service-custom').value.trim();
+  var service=serviceS==='__autre__'?serviceC:serviceS;
+  if(!client||!service){ showToast('Client et service requis.','var(--red)'); return; }
+  var id=document.getElementById('cmd-id').value;
+  var existing=id?DB.commandes.find(function(c){ return c.id===id; }):null;
+  var newAvance=Number(document.getElementById('cmd-avance').value||0);
+  var oldAvance=existing?getAvance(existing):0;
+  var data={
+    id:id||uid(),
+    num:existing?existing.num:nextCmdNum(),
+    client:client,service:service,
+    montant:Number(document.getElementById('cmd-montant').value||0),
+    cout:Number(document.getElementById('cmd-cout').value||0),
+    avance:newAvance,
+    deadline:document.getElementById('cmd-deadline').value,
+    statut:document.getElementById('cmd-statut').value,
+    note:document.getElementById('cmd-note').value.trim(),
+    date:today(),
+    created:existing?existing.created:Date.now()
+  };
+  if(id){ var i=DB.commandes.findIndex(function(c){ return c.id===id; }); DB.commandes[i]=data; }
+  else DB.commandes.push(data);
+
+  // Enregistrer automatiquement l'avance comme recette si > 0
+  var avanceDiff = newAvance - oldAvance;
+  if(avanceDiff > 0) {
+    DB.recettes.push({
+      id:uid(),
+      desc:service,
+      amount:avanceDiff,
+      client:client,
+      cmdId:data.id,
+      date:today(),
+      ts:Date.now(),
+      type:'avance'
+    });
+    showToast('✅ Commande enregistrée + avance de '+fmt(avanceDiff)+' encaissée !','var(--green)');
+  } else {
+    showToast('✅ Commande enregistrée !','var(--green)');
+  }
+
+  save(); closeModal('modal-commande'); renderOrders(currentOrderCat); renderDashboard();
+}
+
+function editOrder(id){
+  var c=DB.commandes.find(function(x){ return x.id===id; }); if(!c) return;
+  document.getElementById('modal-cmd-title').textContent='Modifier — '+(c.num||'');
+  document.getElementById('cmd-id').value=id;
+  populateCmdSelects();
+  document.getElementById('cmd-client').value=c.client||'';
+  document.getElementById('cmd-service').value=getService(c);
+  document.getElementById('cmd-montant').value=getMontant(c);
+  document.getElementById('cmd-cout').value=getCout(c);
+  document.getElementById('cmd-avance').value=getAvance(c);
+  document.getElementById('cmd-deadline').value=getDeadline(c);
+  document.getElementById('cmd-statut').value=c.statut||'en_attente';
+  document.getElementById('cmd-note').value=getNote(c);
+  document.getElementById('cmd-client-custom').style.display='none';
+  document.getElementById('cmd-service-custom').style.display='none';
+  openModal('modal-commande');
+}
+
+function viewOrder(id){
+  var c=DB.commandes.find(function(x){ return x.id===id; }); if(!c) return;
+  var st=ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+  var montant=getMontant(c), avance=getAvance(c), cout=getCout(c);
+  var reste=montant-avance;
+  var marge=montant>0?Math.round(((montant-cout)/montant)*100):0;
+  var mc=marge<30?'var(--red)':marge<50?'var(--gold)':'var(--green)';
+  document.getElementById('cmd-detail-content').innerHTML=
+    '<div class="bilan-row"><span class="bl-label">N° Commande</span><span style="font-size:12px;color:var(--muted);font-family:monospace;">'+(c.num||'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Client</span><span class="bl-val" style="font-size:14px;">'+(c.client||'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Service</span><span style="font-size:13px;">'+getService(c)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Statut</span><span class="badge '+st.cls+'">'+st.label+'</span>'+(isOverdue(c)?'<span style="color:var(--red);font-size:11px;margin-left:6px;">⚠️ En retard</span>':'')+'</div>'+
+    '<div class="bilan-row"><span class="bl-label">Montant total</span><span class="bl-val" style="color:var(--gold);">'+fmt(montant)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Coût variable</span><span class="bl-val" style="color:var(--muted);font-size:14px;">'+(cout>0?fmt(cout):'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Marge</span><span class="bl-val" style="color:'+mc+';font-size:14px;">'+(cout>0?marge+'%':'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Avance reçue</span><span class="bl-val" style="color:var(--green);">'+fmt(avance)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Reste à payer</span><span class="bl-val" style="color:'+(reste>0?'var(--red)':'var(--green)')+';">'+fmt(reste)+'</span></div>'+
+    (getDeadline(c)?'<div class="bilan-row"><span class="bl-label">Livraison prévue</span><span style="font-size:12px;">'+getDeadline(c)+'</span></div>':'')+
+    (getNote(c)?'<div style="margin-top:10px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.6;">'+getNote(c)+'</div>':'')+
+    (marge<30&&cout>0?'<div class="alert alert-red" style="margin-top:10px;">⚠️ Marge faible : '+marge+'% — en dessous du seuil de 30%</div>':'');
+  document.getElementById('cmd-detail-actions').innerHTML=
+    '<button class="btn btn-outline" onclick="closeModal(\'modal-cmd-detail\')">Fermer</button>'+
+    '<button class="btn btn-outline" onclick="closeModal(\'modal-cmd-detail\');showReceipt(\''+id+'\')">🧾 Reçu</button>'+
+    '<button class="btn btn-green" onclick="closeModal(\'modal-cmd-detail\');openRecetteModal(\''+id+'\')">💰 Encaisser</button>'+
+    '<button class="btn btn-gold" onclick="closeModal(\'modal-cmd-detail\');editOrder(\''+id+'\')">✏️</button>'+
+    '<button class="btn btn-red" onclick="deleteOrder(\''+id+'\')">🗑️</button>';
+  openModal('modal-cmd-detail');
+}
+
+function deleteOrder(id){
+  checkPin('supprimer cette commande',function(){
+    confirmAction('Supprimer','Supprimer cette commande définitivement ?',function(){
+      DB.commandes=DB.commandes.filter(function(c){ return c.id!==id; });
+      save(); closeModal('modal-cmd-detail'); renderOrders(currentOrderCat);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// REÇU / FACTURE
+// ══════════════════════════════════════════════
+function showReceipt(id){
+  var c=DB.commandes.find(function(x){ return x.id===id; }); if(!c) return;
+  var montant=getMontant(c), avance=getAvance(c), reste=montant-avance;
+  document.getElementById('receipt-preview').innerHTML=
+    '<div class="receipt-header">'+
+    '<div class="receipt-logo">SLG</div>'+
+    '<div style="font-size:11px;color:#666;margin-top:4px;">Centre de Services • Gansosso, Kandi — Alibori</div>'+
+    '<div style="font-size:10px;color:#999;margin-top:2px;">Tél: 0196 709 750</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:12px;">'+
+    '<span>N° '+( c.num||'—')+'</span><span>'+( c.date||today())+'</span></div>'+
+    '<div class="receipt-row"><span>Client</span><span style="font-weight:600;">'+(c.client||'—')+'</span></div>'+
+    '<div class="receipt-row"><span>Service</span><span>'+getService(c)+'</span></div>'+
+    '<div class="receipt-row"><span>Statut</span><span>'+(ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente).label+'</span></div>'+
+    (getDeadline(c)?'<div class="receipt-row"><span>Livraison</span><span>'+getDeadline(c)+'</span></div>':'')+
+    (getNote(c)?'<div class="receipt-row"><span>Note</span><span style="font-size:11px;">'+getNote(c)+'</span></div>':'')+
+    '<div class="receipt-total"><span>Montant total</span><span>'+fmt(montant)+'</span></div>'+
+    '<div class="receipt-row"><span>Avance versée</span><span style="color:#10B981;">'+fmt(avance)+'</span></div>'+
+    '<div class="receipt-row"><span style="font-weight:700;">Reste à payer</span><span style="font-weight:700;color:'+(reste>0?'#EF4444':'#10B981')+';">'+fmt(reste)+'</span></div>'+
+    '<div class="receipt-footer">Merci de votre confiance !<br>SLG Kandi — Qualité garantie ✓</div>';
+  openModal('modal-recu');
+}
+
+function printReceipt(){
+  var content=document.getElementById('receipt-preview').innerHTML;
+  var win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reçu SLG</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'DM Sans',sans-serif;padding:24px;max-width:420px;margin:0 auto;background:#fff;color:#111;}
+    .receipt-logo{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#F7971E;letter-spacing:-1px;}
+    .receipt-header{text-align:center;border-bottom:3px solid #FFD200;padding-bottom:16px;margin-bottom:16px;}
+    .receipt-company{font-size:11px;color:#888;margin-top:4px;line-height:1.5;}
+    .receipt-num{display:flex;justify-content:space-between;font-size:11px;color:#999;margin-bottom:14px;padding:8px 0;border-bottom:1px dashed #ddd;}
+    .receipt-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+    .receipt-row .label{color:#666;flex-shrink:0;margin-right:10px;}
+    .receipt-row .value{font-weight:600;text-align:right;}
+    .receipt-divider{border:none;border-top:2px dashed #FFD200;margin:12px 0;}
+    .receipt-total{display:flex;justify-content:space-between;padding:12px 0;font-weight:700;font-size:16px;}
+    .receipt-avance{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:#10B981;}
+    .receipt-reste{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:700;border-top:2px solid #FFD200;}
+    .receipt-footer{text-align:center;margin-top:20px;padding-top:14px;border-top:1px solid #eee;}
+    .receipt-footer p{font-size:11px;color:#999;line-height:1.8;}
+    .receipt-stamp{display:inline-block;border:2px solid #FFD200;border-radius:4px;padding:4px 12px;font-size:11px;font-weight:700;color:#F7971E;letter-spacing:2px;margin-top:8px;}
+    @media print{body{padding:10px;}}
+  </style></head><body>`+content+`</body></html>`);
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 500);
+}
+
+function showReceipt(id){
+  var c=DB.commandes.find(function(x){ return x.id===id; }); if(!c) return;
+  var montant=getMontant(c), avance=getAvance(c), reste=montant-avance;
+  var st=(ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente).label;
+  document.getElementById('receipt-preview').innerHTML=
+    '<div class="receipt-header">'+
+    '<div class="receipt-logo">SLG</div>'+
+    '<div class="receipt-company">Sky Light Great • Centre de Services<br>Quartier Gansosso, Kandi — Alibori, Bénin<br>📞 0196 709 750</div>'+
+    '</div>'+
+    '<div class="receipt-num"><span>N° <strong>'+(c.num||'—')+'</strong></span><span>'+(c.date||today())+'</span></div>'+
+    '<div class="receipt-row"><span class="label">Client</span><span class="value">'+(c.client||'—')+'</span></div>'+
+    '<div class="receipt-row"><span class="label">Service</span><span class="value" style="max-width:60%;text-align:right;">'+getService(c)+'</span></div>'+
+    '<div class="receipt-row"><span class="label">Statut</span><span class="value">'+st+'</span></div>'+
+    (getDeadline(c)?'<div class="receipt-row"><span class="label">Livraison prévue</span><span class="value">'+getDeadline(c)+'</span></div>':'')+
+    (getNote(c)?'<div class="receipt-row"><span class="label">Note</span><span class="value" style="font-size:12px;max-width:60%;text-align:right;">'+getNote(c)+'</span></div>':'')+
+    '<hr class="receipt-divider">'+
+    '<div class="receipt-total"><span>Montant total</span><span style="color:#F7971E;">'+fmt(montant)+'</span></div>'+
+    '<div class="receipt-avance"><span>✓ Avance versée</span><span>'+fmt(avance)+'</span></div>'+
+    '<div class="receipt-reste"><span>Reste à payer</span><span style="color:'+(reste>0?'#EF4444':'#10B981')+';">'+fmt(reste)+'</span></div>'+
+    '<div class="receipt-footer"><p>Merci de votre confiance !<br>Conservez ce reçu comme preuve de paiement.</p><div class="receipt-stamp">SLG KANDI ✓</div></div>';
+  openModal('modal-recu');
+}
+
+// ══════════════════════════════════════════════
+// RECETTES
+// ══════════════════════════════════════════════
+function openRecetteModal(cmdId){
+  if(cmdId){
+    var cmd=DB.commandes.find(function(c){ return c.id===cmdId; }); if(!cmd) return;
+    var reste=getMontant(cmd)-getAvance(cmd);
+    document.getElementById('enc-cmd-id').value=cmdId;
+    document.getElementById('enc-amount').value=reste>0?reste:'';
+    document.getElementById('enc-statut').value=reste<=0?'livre':'termine';
+    document.getElementById('enc-cmd-info').innerHTML='<strong>'+(cmd.client||'?')+'</strong> — '+getService(cmd)+'<br>Total : <span style="color:var(--gold)">'+fmt(getMontant(cmd))+'</span> | Avance : <span style="color:var(--green)">'+fmt(getAvance(cmd))+'</span> | <span style="color:'+(reste>0?'var(--red)':'var(--green)')+'">Reste : '+fmt(reste)+'</span>';
+    openModal('modal-encaissement');
+  } else {
+    var cats=[...new Set(DB.catalogue.map(function(c){ return c.cat; }))];
+    var opts='<option value="">-- Choisir --</option>';
+    cats.forEach(function(cat){
+      opts+='<optgroup label="'+cat+'">';
+      DB.catalogue.filter(function(c){ return c.cat===cat; }).forEach(function(c){
+        opts+='<option value="'+c.name+'">'+c.name+' — '+c.price.toLocaleString('fr-FR')+' F'+(c.unit||'')+'</option>';
+      });
+      opts+='</optgroup>';
+    });
+    opts+='<option value="__autre__">✏️ Autre...</option>';
+    document.getElementById('r-desc').innerHTML=opts;
+    document.getElementById('r-client').innerHTML='<option value="">-- Optionnel --</option>'+DB.contacts.map(function(c){ return '<option value="'+c.name+'">'+c.name+(c.city?' ('+c.city+')':'')+'</option>'; }).join('')+'<option value="__autre__">✏️ Autre...</option>';
+    document.getElementById('r-amount').value='';
+    document.getElementById('r-desc-custom').style.display='none';
+    document.getElementById('r-client-custom').style.display='none';
+    openModal('modal-recette');
+  }
+}
+
+function onRecetteServiceChange(){
+  var val=document.getElementById('r-desc').value;
+  var c=document.getElementById('r-desc-custom');
+  if(val==='__autre__'){ c.style.display='block'; c.focus(); return; }
+  c.style.display='none'; c.value='';
+  var item=DB.catalogue.find(function(x){ return x.name===val; });
+  if(item&&!document.getElementById('r-amount').value) document.getElementById('r-amount').value=item.price;
+}
+
+function onRecetteClientChange(){
+  var val=document.getElementById('r-client').value;
+  var c=document.getElementById('r-client-custom');
+  if(val==='__autre__'){ c.style.display='block'; c.focus(); }
+  else{ c.style.display='none'; c.value=''; }
+}
+
+function saveRecette(){
+  var descS=document.getElementById('r-desc').value;
+  var descC=document.getElementById('r-desc-custom').value.trim();
+  var desc=descS==='__autre__'?descC:descS;
+  var amount=document.getElementById('r-amount').value;
+  if(!desc||!amount){ showToast('Service et montant requis.','var(--red)'); return; }
+  var clientS=document.getElementById('r-client').value;
+  var clientC=document.getElementById('r-client-custom').value.trim();
+  var client=clientS==='__autre__'?clientC:clientS;
+  DB.recettes.push({id:uid(),desc:desc,amount:Number(amount),client:client,cmdId:null,date:today(),ts:Date.now()});
+  save(); closeModal('modal-recette'); renderDashboard();
+}
+
+function saveEncaissement(){
+  var cmdId=document.getElementById('enc-cmd-id').value;
+  var amount=Number(document.getElementById('enc-amount').value);
+  var statut=document.getElementById('enc-statut').value;
+  if(!amount){ showToast('Montant requis.','var(--red)'); return; }
+  var i=DB.commandes.findIndex(function(c){ return c.id===cmdId; }); if(i<0) return;
+  var anc=getAvance(DB.commandes[i]);
+  DB.commandes[i].avance=anc+amount;
+  DB.commandes[i].acompte=anc+amount;
+  DB.commandes[i].statut=statut;
+  DB.recettes.push({id:uid(),desc:getService(DB.commandes[i]),amount:amount,client:DB.commandes[i].client,cmdId:cmdId,date:today(),ts:Date.now()});
+  save(); closeModal('modal-encaissement'); renderDashboard();
+}
+
+function deleteRecette(id){
+  checkPin('supprimer cette recette',function(){
+    confirmAction('Supprimer','Supprimer cette recette ?',function(){
+      DB.recettes=DB.recettes.filter(function(r){ return r.id!==id; });
+      save(); renderDashboard();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// STOCK
+// ══════════════════════════════════════════════
+function renderStock(){
+  var alerts=document.getElementById('stock-alerts');
+  var list=document.getElementById('stock-list');
+  var low=DB.stock.filter(function(s){ return Number(s.qty)<=Number(s.alert); });
+  alerts.innerHTML=low.map(function(s){ return '<div class="alert alert-'+(Number(s.qty)===0?'red':'orange')+'">⚠️ <strong>'+s.name+'</strong> — '+s.qty+' '+s.unit+' restant(s) (seuil: '+s.alert+')</div>'; }).join('');
+  list.innerHTML=DB.stock.map(function(s){
+    var pct=Math.min(100,Math.round((Number(s.qty)/(Number(s.alert)*3||10))*100));
+    var color=Number(s.qty)<=Number(s.alert)?'var(--red)':Number(s.qty)<=Number(s.alert)*2?'var(--gold)':'var(--green)';
+    return '<div class="list-item"><div class="item-ico" style="background:rgba(255,210,0,0.08);color:var(--gold);">📦</div><div class="item-info"><div class="item-name">'+s.name+'</div><div class="item-sub">'+s.qty+' '+s.unit+' · Seuil: '+s.alert+(s.price?' · '+fmt(s.price)+'/u':'')+'</div><div class="stock-bar"><div class="stock-fill" style="width:'+pct+'%;background:'+color+';"></div></div></div><div class="item-actions"><button class="icon-btn" onclick="openStockAdj(\''+s.id+'\')" title="Ajuster">🔢</button><button class="icon-btn" onclick="editStock(\''+s.id+'\')" title="Modifier">✏️</button><button class="icon-btn" style="color:var(--red)" onclick="deleteStock(\''+s.id+'\')" title="Supprimer">🗑️</button></div></div>';
+  }).join('');
+}
+
+function openStockAdj(id){
+  var s=DB.stock.find(function(x){ return x.id===id; }); if(!s) return;
+  document.getElementById('sadj-id').value=id;
+  document.getElementById('sadj-name-label').textContent=s.name+' — Quantité actuelle : '+s.qty+' '+s.unit;
+  document.getElementById('sadj-qty').value=s.qty;
+  openModal('modal-stock-adj');
+}
+function saveStockAdj(){
+  var id=document.getElementById('sadj-id').value;
+  var qty=Number(document.getElementById('sadj-qty').value);
+  var i=DB.stock.findIndex(function(s){ return s.id===id; });
+  if(i>=0){ DB.stock[i].qty=qty; save(); closeModal('modal-stock-adj'); renderStock(); }
+}
+function editStock(id){
+  var s=DB.stock.find(function(x){ return x.id===id; }); if(!s) return;
+  document.getElementById('modal-stock-title').textContent='Modifier Matière';
+  document.getElementById('s-id').value=id;
+  document.getElementById('s-name').value=s.name;
+  document.getElementById('s-unit').value=s.unit;
+  document.getElementById('s-qty').value=s.qty;
+  document.getElementById('s-alert').value=s.alert;
+  document.getElementById('s-price').value=s.price||'';
+  openModal('modal-stock');
+}
+function saveStock(){
+  var name=document.getElementById('s-name').value.trim();
+  if(!name){ showToast('Nom requis.','var(--red)'); return; }
+  var id=document.getElementById('s-id').value;
+  var data={id:id||uid(),name:name,unit:document.getElementById('s-unit').value.trim()||'pcs',qty:Number(document.getElementById('s-qty').value||0),alert:Number(document.getElementById('s-alert').value||5),price:Number(document.getElementById('s-price').value||0)};
+  if(id){ var i=DB.stock.findIndex(function(s){ return s.id===id; }); DB.stock[i]=data; }
+  else DB.stock.push(data);
+  save(); closeModal('modal-stock');
+  document.getElementById('s-id').value='';
+  document.getElementById('modal-stock-title').textContent='Matière Première';
+  renderStock();
+}
+function deleteStock(id){
+  checkPin('supprimer cette matière',function(){
+    confirmAction('Supprimer','Supprimer cette matière première ?',function(){
+      DB.stock=DB.stock.filter(function(s){ return s.id!==id; });
+      save(); renderStock();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// CATALOGUE
+// ══════════════════════════════════════════════
+function renderCatalogue(){
+  var cats=[...new Set(DB.catalogue.map(function(c){ return c.cat; }))];
+  var html='';
+  cats.forEach(function(cat){
+    html+='<tr><td colspan="4" style="background:rgba(255,210,0,0.06);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:8px 12px;">'+cat+'</td></tr>';
+    DB.catalogue.filter(function(c){ return c.cat===cat; }).forEach(function(c){
+      var cost=Number(c.cost||0);
+      var marge=c.price>0?Math.round(((c.price-cost)/c.price)*100):0;
+      var mc=marge<30?'var(--red)':marge<50?'var(--gold)':'var(--green)';
+      html+='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:10px 12px;font-size:12px;">'+c.name+'<br><span style="font-size:10px;color:var(--muted);">'+( c.detail||'')+'</span></td><td style="padding:10px 8px;text-align:right;font-family:\'Syne\',sans-serif;font-size:15px;font-weight:700;color:var(--gold);">'+c.price.toLocaleString('fr-FR')+(c.unit||'')+'</td><td style="padding:10px 8px;text-align:right;font-size:11px;color:var(--muted);">'+(cost>0?cost.toLocaleString('fr-FR'):'—')+'</td><td style="padding:10px 8px;text-align:right;font-size:11px;color:'+mc+';font-weight:700;">'+(cost>0?marge+'%':'—')+' <button onclick="editCatItem(\''+c.id+'\')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:11px;">✏️</button><button onclick="deleteCatItem(\''+c.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;">✕</button></td></tr>';
+    });
+  });
+  document.getElementById('catalogue-body').innerHTML=html;
+}
+
+function editCatItem(id){
+  var c=DB.catalogue.find(function(x){ return x.id===id; }); if(!c) return;
+  document.getElementById('ci-cat').value=c.cat||'';
+  document.getElementById('ci-name').value=c.name;
+  document.getElementById('ci-detail').value=c.detail||'';
+  document.getElementById('ci-price').value=c.price;
+  document.getElementById('ci-cost').value=c.cost||0;
+  document.getElementById('ci-unit').value=c.unit||'';
+  document.getElementById('ci-id').value=id;
+  openModal('modal-cat-item');
+}
+
+function saveCatItem(){
+  var name=document.getElementById('ci-name').value.trim();
+  var price=Number(document.getElementById('ci-price').value);
+  if(!name||!price){ showToast('Nom et prix requis.','var(--red)'); return; }
+  var id=document.getElementById('ci-id').value;
+  var data={id:id||uid(),cat:document.getElementById('ci-cat').value.trim()||'Autres',name:name,detail:document.getElementById('ci-detail').value.trim(),price:price,cost:Number(document.getElementById('ci-cost').value||0),unit:document.getElementById('ci-unit').value.trim()};
+  if(id){ var i=DB.catalogue.findIndex(function(c){ return c.id===id; }); if(i>=0)DB.catalogue[i]=data; else DB.catalogue.push(data); }
+  else DB.catalogue.push(data);
+  save(); closeModal('modal-cat-item');
+  document.getElementById('ci-id').value='';
+  ['ci-cat','ci-name','ci-detail','ci-price','ci-cost','ci-unit'].forEach(function(f){ document.getElementById(f).value=''; });
+  renderCatalogue();
+}
+
+function deleteCatItem(id){
+  checkPin('supprimer ce service',function(){
+    confirmAction('Supprimer','Supprimer ce service du catalogue ?',function(){
+      DB.catalogue=DB.catalogue.filter(function(c){ return c.id!==id; });
+      save(); renderCatalogue();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// BILAN
+// ══════════════════════════════════════════════
+var MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function populateBilanMonths(){
+  var sel=document.getElementById('bilan-month');
+  var months=new Set();
+  DB.recettes.forEach(function(r){ if(r.date) months.add(r.date.slice(0,7)); });
+  DB.commandes.forEach(function(c){ var m=getCommandeDate(c); if(m) months.add(m); });
+  months.add(today().slice(0,7));
+  var current=sel.value;
+  sel.innerHTML=[...months].sort().reverse().map(function(m){
+    var parts=m.split('-');
+    return '<option value="'+m+'">'+MOIS[parseInt(parts[1])-1]+' '+parts[0]+'</option>';
+  }).join('');
+  if(current&&[...months].includes(current)) sel.value=current;
+}
+
+function renderBilan(){
+  var month=document.getElementById('bilan-month').value;
+  if(!month) return;
+  var recettes=DB.recettes.filter(function(r){ return r.date&&r.date.startsWith(month); });
+  var totalRecettes=recettes.reduce(function(s,r){ return s+Number(r.amount||0); },0);
+  var commandes=DB.commandes.filter(function(c){ return getCommandeDate(c)===month; });
+  var cmdLivrees=commandes.filter(function(c){ return c.statut==='livre'; }).length;
+  var totalCmds=commandes.reduce(function(s,c){ return s+getMontant(c); },0);
+  var avances=commandes.reduce(function(s,c){ return s+getAvance(c); },0);
+  var resteTotal=totalCmds-avances;
+  var totalCouts=commandes.reduce(function(s,c){ return s+getCout(c); },0);
+  var totalCharges=DB.charges.reduce(function(s,c){ return s+Number(c.montant||0); },0);
+  var beneficeNet=totalRecettes-totalCouts-totalCharges;
+  var stockVal=DB.stock.reduce(function(s,st){ return s+Number(st.qty||0)*Number(st.price||0); },0);
+  var objectif=150000;
+  var pct=Math.min(100,Math.round((totalRecettes/objectif)*100));
+  var margeGlobale=totalRecettes>0?Math.round(((totalRecettes-totalCouts-totalCharges)/totalRecettes)*100):0;
+  var mc=margeGlobale<30?'var(--red)':margeGlobale<50?'var(--gold)':'var(--green)';
+  var bc=beneficeNet>=0?'var(--green)':'var(--red)';
+  var nextObj=Math.max(objectif,Math.round(totalRecettes*1.2));
+  var cmdsMF=commandes.filter(function(c){ var ct=getCout(c); return ct&&getMontant(c)>0&&Math.round(((getMontant(c)-ct)/getMontant(c))*100)<30; });
+  var recos=[];
+  if(cmdsMF.length>0) recos.push({t:'⚠️ Marges faibles',v:cmdsMF.length+' commande(s) sous 30% de marge.'});
+  if(totalRecettes<objectif*0.5) recos.push({t:'📈 Boost recettes',v:'Tu es à moins de 50% de l\'objectif. Intensifie la prospection.'});
+  if(DB.stock.filter(function(s){ return Number(s.qty)<=Number(s.alert); }).length>0) recos.push({t:'📦 Réapprovisionner',v:'Plusieurs matières sont en stock faible.'});
+  if(commandes.filter(function(c){ return c.statut==='en_attente'; }).length>2) recos.push({t:'⏳ Commandes en attente',v:'Plusieurs commandes en attente. Commence par les plus urgentes.'});
+  if(recos.length===0) recos.push({t:'🎉 Excellent travail !',v:'Continue sur cette lancée.'});
+
+  document.getElementById('bilan-content').innerHTML=
+    '<div class="card"><div class="card-title">Résumé — '+( MOIS[parseInt(month.split('-')[1])-1]+' '+month.split('-')[0])+'</div>'+
+    '<div class="bilan-row"><span class="bl-label">Recettes enregistrées</span><span class="bl-val" style="color:var(--green);">'+fmt(totalRecettes)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Coûts variables</span><span class="bl-val" style="color:var(--red);font-size:14px;">— '+fmt(totalCouts)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Charges fixes</span><span class="bl-val" style="color:var(--red);font-size:14px;">— '+fmt(totalCharges)+'</span></div>'+
+    '<div class="bilan-total"><span class="bt-label">💰 Bénéfice net</span><span class="bt-val" style="color:'+bc+';">'+fmt(beneficeNet)+'</span></div>'+
+    '<div class="bilan-row" style="margin-top:10px;"><span class="bl-label">Marge nette</span><span class="bl-val" style="color:'+mc+';">'+margeGlobale+'%</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Commandes du mois</span><span class="bl-val" style="font-size:14px;">'+commandes.length+' ('+cmdLivrees+' livrées)</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Montant commandes</span><span class="bl-val" style="color:var(--gold);font-size:14px;">'+fmt(totalCmds)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Avances encaissées</span><span class="bl-val" style="color:var(--green);font-size:14px;">'+fmt(avances)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Restes à encaisser</span><span class="bl-val" style="color:var(--red);font-size:14px;">'+fmt(resteTotal)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Valeur stock actuel</span><span class="bl-val" style="font-size:14px;">'+fmt(stockVal)+'</span></div>'+
+    '<div class="bilan-total"><span class="bt-label">Objectif mensuel</span><span class="bt-val">'+fmt(objectif)+'</span></div>'+
+    '<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Progression</span><span>'+pct+'%</span></div><div class="stock-bar"><div class="stock-fill" style="width:'+pct+'%;background:'+(pct>=100?'var(--green)':pct>=60?'var(--gold)':'var(--red)')+'"></div></div></div></div>'+
+    '<div class="card"><div class="card-title">🏠 Charges du mois</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:11px;color:var(--muted);">Modifiables chaque mois</span><button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="openModal(\'modal-charge\');document.getElementById(\'ch-id\').value=\'\';[\'ch-name\',\'ch-montant\'].forEach(function(f){document.getElementById(f).value=\'\'});document.getElementById(\'ch-categorie\').value=\'fixe\';document.getElementById(\'modal-charge-title\').textContent=\'Nouvelle Charge\';">+ Ajouter</button></div>'+
+    DB.charges.map(function(c){ return '<div class="bilan-row"><span class="bl-label">'+(c.categorie==='fixe'?'🔒':'🔄')+' '+c.name+'</span><div style="display:flex;align-items:center;gap:8px;"><span class="bl-val" style="color:var(--red);font-size:14px;">'+fmt(c.montant)+'</span><button onclick="editCharge(\''+c.id+'\')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;">✏️</button><button onclick="deleteCharge(\''+c.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;">🗑️</button></div></div>'; }).join('')+
+    '<div class="bilan-total" style="margin-top:10px;"><span class="bt-label">Total charges</span><span class="bt-val" style="color:var(--red);">'+fmt(totalCharges)+'</span></div></div>'+
+    '<div class="card"><div class="card-title">🎯 Objectif mois suivant</div>'+
+    '<div class="bilan-total"><span class="bt-label">Objectif suggéré</span><span class="bt-val">'+fmt(nextObj)+'</span></div>'+
+    '<div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.7;">Progression de +20%. Soit environ <strong style="color:var(--gold);">'+fmt(Math.round(nextObj/26))+'/jour</strong> sur 26 jours ouvrables.</div></div>'+
+    '<div class="card"><div class="card-title">💡 Recommandations</div>'+
+    recos.map(function(r){ return '<div class="reco-card"><div class="reco-title">'+r.t+'</div><div class="reco-text">'+r.v+'</div></div>'; }).join('')+'</div>';
+}
+
+// ══════════════════════════════════════════════
+// CHARGES
+// ══════════════════════════════════════════════
+function saveCharge(){
+  var name=document.getElementById('ch-name').value.trim();
+  var montant=Number(document.getElementById('ch-montant').value);
+  if(!name||!montant){ showToast('Nom et montant requis.','var(--red)'); return; }
+  var id=document.getElementById('ch-id').value;
+  var data={id:id||uid(),name:name,montant:montant,categorie:document.getElementById('ch-categorie').value};
+  if(id){ var i=DB.charges.findIndex(function(c){ return c.id===id; }); if(i>=0)DB.charges[i]=data; else DB.charges.push(data); }
+  else DB.charges.push(data);
+  save(); closeModal('modal-charge'); populateBilanMonths(); renderBilan();
+}
+function editCharge(id){
+  var c=DB.charges.find(function(x){ return x.id===id; }); if(!c) return;
+  document.getElementById('modal-charge-title').textContent='Modifier Charge';
+  document.getElementById('ch-id').value=id;
+  document.getElementById('ch-name').value=c.name;
+  document.getElementById('ch-montant').value=c.montant;
+  document.getElementById('ch-categorie').value=c.categorie||'fixe';
+  openModal('modal-charge');
+}
+function deleteCharge(id){
+  checkPin('supprimer cette charge',function(){
+    confirmAction('Supprimer','Supprimer cette charge ?',function(){
+      DB.charges=DB.charges.filter(function(c){ return c.id!==id; });
+      save(); populateBilanMonths(); renderBilan();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// WHATSAPP
+// ══════════════════════════════════════════════
+// ── GESTION UTILISATEURS ──
+var customPin = localStorage.getItem('slg_pin') || '0000';
+
+function saveNewUser(){
+  var email = document.getElementById('new-user-email').value.trim();
+  var role  = document.getElementById('new-user-role').value;
+  if(!email){ showToast('Email requis.','var(--red)'); return; }
+  if(!isAdmin){ showToast('❌ Réservé aux administrateurs.','var(--red)'); return; }
+  var users = JSON.parse(localStorage.getItem('slg_users')||'[]');
+  if(users.find(function(u){ return u.email===email; })){ showToast('Cet email existe déjà.','var(--red)'); return; }
+  users.push({email:email,role:role,added:new Date().toISOString().slice(0,10)});
+  localStorage.setItem('slg_users',JSON.stringify(users));
+  renderUsersList();
+  document.getElementById('new-user-email').value='';
+  showToast('✅ Membre ajouté !','var(--green)');
+}
+
+function renderUsersList(){
+  var users = JSON.parse(localStorage.getItem('slg_users')||'[]');
+  var div = document.getElementById('users-list');
+  if(!users.length){ div.innerHTML=''; return; }
+  var ROLE_LABELS = {secretaire:'📝 Secrétaire', associe:'🤝 Associé'};
+  div.innerHTML = '<div class="card-title" style="margin-top:10px;">Membres ajoutés</div>'+
+    users.map(function(u,i){
+      return '<div class="list-item"><div class="item-info"><div class="item-name">'+u.email+'</div><div class="item-sub">'+( ROLE_LABELS[u.role]||u.role)+' • Ajouté le '+u.added+'</div></div><button class="icon-btn" style="color:var(--red)" onclick="removeUser('+i+')">🗑️</button></div>';
+    }).join('');
+}
+
+function removeUser(i){
+  checkPin('supprimer ce membre', function(){
+    var users = JSON.parse(localStorage.getItem('slg_users')||'[]');
+    users.splice(i,1);
+    localStorage.setItem('slg_users',JSON.stringify(users));
+    renderUsersList();
+    showToast('Membre supprimé.','var(--gold)');
+  });
+}
+
+function changePin(){
+  if(!isAdmin){ showToast('❌ Réservé aux administrateurs.','var(--red)'); return; }
+  var old  = document.getElementById('old-pin').value;
+  var np1  = document.getElementById('new-pin').value;
+  var np2  = document.getElementById('new-pin2').value;
+  if(old !== customPin){ showToast('❌ Ancien PIN incorrect.','var(--red)'); return; }
+  if(np1.length<4){ showToast('Le PIN doit avoir 4 chiffres.','var(--red)'); return; }
+  if(np1!==np2){ showToast('Les deux PINs ne correspondent pas.','var(--red)'); return; }
+  customPin = np1;
+  localStorage.setItem('slg_pin', np1);
+  ['old-pin','new-pin','new-pin2'].forEach(function(f){ document.getElementById(f).value=''; });
+  showToast('✅ PIN changé avec succès !','var(--green)');
+}
+
+// Override ADMIN_PIN avec le pin stocké
+Object.defineProperty(window, 'ADMIN_PIN', { get: function(){ return customPin; } });
+
+// ══════════════════════════════════════════════
+// CLÔTURE MENSUELLE
+// ══════════════════════════════════════════════
+var MOIS_LABELS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function getCurrentMonth(){ return today().slice(0,7); }
+
+function isArchived(c) {
+  var cmdMonth = getCommandeDate(c);
+  return cmdMonth && cmdMonth < getCurrentMonth();
+}
+
+function checkAutoCloture() {
+  // Vérification automatique au chargement
+  var lastCheck = localStorage.getItem('slg_last_cloture_check');
+  var thisMonth = getCurrentMonth();
+  if(lastCheck === thisMonth) return;
+  localStorage.setItem('slg_last_cloture_check', thisMonth);
+  // Vérifier s'il y a des commandes du mois précédent non archivées
+  var prevMonth = getPrevMonth(thisMonth);
+  var prevCmds = DB.commandes.filter(function(c){ return getCommandeDate(c) === prevMonth; });
+  if(prevCmds.length > 0) {
+    showToast('📁 ' + prevCmds.length + ' commande(s) de ' + formatMonth(prevMonth) + ' archivées automatiquement.', 'var(--green)');
+  }
+}
+
+function getPrevMonth(m) {
+  var parts = m.split('-');
+  var y = parseInt(parts[0]), mo = parseInt(parts[1]);
+  mo--; if(mo===0){ mo=12; y--; }
+  return y+'-'+String(mo).padStart(2,'0');
+}
+
+function formatMonth(m) {
+  var parts = m.split('-');
+  return MOIS_LABELS[parseInt(parts[1])-1]+' '+parts[0];
+}
+
+function clotureManuelle() {
+  var current = getCurrentMonth();
+  var cmds = DB.commandes.filter(function(c){ return getCommandeDate(c)===current; });
+  if(!cmds.length){ showToast('Aucune commande ce mois.','var(--muted)'); return; }
+  var pending = cmds.filter(function(c){ return c.statut!=='livre'; });
+  var msg = 'Clôturer ' + formatMonth(current) + ' ? ' + cmds.length + ' commande(s) seront archivées en lecture seule.';
+  if(pending.length > 0) msg += ' ⚠️ ' + pending.length + ' commande(s) non livrée(s) seront aussi archivées.';
+  checkPin('clôturer le mois', function(){
+    confirmAction('Clôturer ' + formatMonth(current), msg, function(){
+      DB.commandes.forEach(function(c){
+        if(getCommandeDate(c)===current) c.archived=true;
+      });
+      save();
+      renderOrders('tous');
+      showToast('✅ Mois ' + formatMonth(current) + ' clôturé !','var(--green)');
+    });
+  });
+}
+
+function showArchives() {
+  document.getElementById('cmd-current-month').style.display='none';
+  document.getElementById('cmd-archives').style.display='block';
+  // Peupler le select des mois archivés
+  var months = new Set();
+  DB.commandes.forEach(function(c){
+    var m = getCommandeDate(c);
+    if(m && (m < getCurrentMonth() || c.archived)) months.add(m);
+  });
+  var sel = document.getElementById('archive-month-select');
+  if(!months.size){
+    sel.innerHTML='<option value="">Aucune archive disponible</option>';
+    document.getElementById('archives-list').innerHTML='<div class="empty"><div class="empty-ico">📁</div><p>Aucune archive.<br>Les mois passés apparaîtront ici.</p></div>';
+    return;
+  }
+  sel.innerHTML=[...months].sort().reverse().map(function(m){
+    return '<option value="'+m+'">'+formatMonth(m)+'</option>';
+  }).join('');
+  renderArchives();
+}
+
+function hideArchives() {
+  document.getElementById('cmd-archives').style.display='none';
+  document.getElementById('cmd-current-month').style.display='block';
+}
+
+function renderArchives() {
+  var month = document.getElementById('archive-month-select').value;
+  if(!month) return;
+  var list = document.getElementById('archives-list');
+  var cmds = DB.commandes.filter(function(c){ return getCommandeDate(c)===month; });
+  if(!cmds.length){ list.innerHTML='<div class="empty"><p>Aucune commande pour ce mois.</p></div>'; return; }
+  var totalMontant = cmds.reduce(function(s,c){ return s+getMontant(c); },0);
+  var totalAvance  = cmds.reduce(function(s,c){ return s+getAvance(c); },0);
+  list.innerHTML =
+    '<div class="cloture-banner">🔒 Archive — '+formatMonth(month)+' · '+cmds.length+' commande(s) · Total: '+fmt(totalMontant)+' · Encaissé: '+fmt(totalAvance)+'</div>'+
+    cmds.map(function(c){
+      var st=ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+      var reste=getMontant(c)-getAvance(c);
+      return '<div class="list-item cmd-archived" data-id="'+c.id+'" style="cursor:pointer;">'+
+        '<div class="item-ico" style="background:rgba(107,127,163,0.1);color:var(--muted);font-size:20px;">📋</div>'+
+        '<div class="item-info">'+
+        '<div class="item-name">'+(c.client||'—')+'<span class="archived-badge">Archive</span></div>'+
+        '<div style="font-size:10px;color:var(--muted);font-family:monospace;">'+(c.num||'')+'</div>'+
+        '<div class="item-sub">'+getService(c)+'</div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-top:4px;">'+
+        '<span class="badge '+st.cls+'">'+st.label+'</span>'+
+        '<span style="font-size:10px;color:var(--gold);font-weight:600;">'+fmt(getMontant(c))+'</span>'+
+        (reste>0?'<span style="font-size:10px;color:var(--red);">Reste: '+fmt(reste)+'</span>':'')+
+        '</div></div></div>';
+    }).join('');
+}
+
+function viewArchivedOrder(id) {
+  var c=DB.commandes.find(function(x){ return x.id===id; }); if(!c) return;
+  var st=ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente;
+  var montant=getMontant(c), avance=getAvance(c), reste=montant-avance;
+  document.getElementById('cmd-detail-content').innerHTML=
+    '<div class="cloture-banner" style="margin-bottom:12px;">🔒 Commande archivée — lecture seule</div>'+
+    '<div class="bilan-row"><span class="bl-label">N° Commande</span><span style="font-size:12px;color:var(--muted);font-family:monospace;">'+(c.num||'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Client</span><span class="bl-val" style="font-size:14px;">'+(c.client||'—')+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Service</span><span style="font-size:13px;">'+getService(c)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Statut</span><span class="badge '+st.cls+'">'+st.label+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Montant total</span><span class="bl-val" style="color:var(--gold);">'+fmt(montant)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Avance reçue</span><span class="bl-val" style="color:var(--green);">'+fmt(avance)+'</span></div>'+
+    '<div class="bilan-row"><span class="bl-label">Reste à payer</span><span class="bl-val" style="color:'+(reste>0?'var(--red)':'var(--green)')+';">'+fmt(reste)+'</span></div>'+
+    (getDeadline(c)?'<div class="bilan-row"><span class="bl-label">Livraison</span><span>'+getDeadline(c)+'</span></div>':'')+
+    (getNote(c)?'<div style="margin-top:10px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted);">'+getNote(c)+'</div>':'');
+  document.getElementById('cmd-detail-actions').innerHTML=
+    '<button class="btn btn-outline" style="flex:1" onclick="closeModal(\'modal-cmd-detail\')">Fermer</button>'+
+    '<button class="btn btn-outline" onclick="closeModal(\'modal-cmd-detail\');showReceipt(\''+id+'\')">🧾 Reçu</button>';
+  openModal('modal-cmd-detail');
+}
+
+function exportArchivePDF() {
+  var month = document.getElementById('archive-month-select').value;
+  if(!month){ showToast('Choisir un mois.','var(--red)'); return; }
+  var cmds = DB.commandes.filter(function(c){ return getCommandeDate(c)===month; });
+  var recettes = DB.recettes.filter(function(r){ return r.date&&r.date.startsWith(month); });
+  var totalMontant=cmds.reduce(function(s,c){ return s+getMontant(c); },0);
+  var totalAvance=cmds.reduce(function(s,c){ return s+getAvance(c); },0);
+  var totalRecettes=recettes.reduce(function(s,r){ return s+Number(r.amount||0); },0);
+  var win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport SLG - `+formatMonth(month)+`</title>
+  <style>
+    body{font-family:sans-serif;padding:24px;max-width:700px;margin:0 auto;color:#111;}
+    h1{color:#F7971E;font-size:28px;border-bottom:3px solid #FFD200;padding-bottom:10px;}
+    h2{color:#333;font-size:16px;margin-top:20px;margin-bottom:10px;border-left:4px solid #FFD200;padding-left:10px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}
+    th{background:#f5f5f5;padding:8px;text-align:left;font-weight:600;border-bottom:2px solid #FFD200;}
+    td{padding:8px;border-bottom:1px solid #eee;}
+    .total-box{background:#FFF9E6;border:2px solid #FFD200;border-radius:8px;padding:14px;margin-top:16px;}
+    .total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;}
+    .total-row.main{font-weight:700;font-size:16px;border-top:2px solid #FFD200;margin-top:6px;padding-top:10px;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+    .company{font-size:11px;color:#666;line-height:1.6;}
+    .badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+    @media print{body{padding:10px;}}
+  </style></head><body>
+  <div class="header">
+    <div><h1>SLG</h1><div class="company">Sky Light Great • Gansosso, Kandi<br>Tél: 0196 709 750</div></div>
+    <div style="text-align:right;font-size:12px;color:#666;">Rapport mensuel<br><strong>`+formatMonth(month)+`</strong><br>Généré le `+today()+`</div>
+  </div>
+  <h2>📋 Commandes du mois (${cmds.length})</h2>
+  <table><thead><tr><th>N°</th><th>Client</th><th>Service</th><th>Statut</th><th>Montant</th><th>Avance</th><th>Reste</th></tr></thead><tbody>`+
+  cmds.map(function(c){
+    var r=getMontant(c)-getAvance(c);
+    return '<tr><td style="font-family:monospace;font-size:10px;">'+(c.num||'—')+'</td><td>'+(c.client||'—')+'</td><td>'+getService(c)+'</td><td>'+(ORDER_STATUS[c.statut]||ORDER_STATUS.en_attente).label+'</td><td style="text-align:right;font-weight:600;">'+getMontant(c).toLocaleString('fr-FR')+' F</td><td style="text-align:right;color:#10B981;">'+getAvance(c).toLocaleString('fr-FR')+' F</td><td style="text-align:right;color:'+(r>0?'#EF4444':'#10B981')+';">'+r.toLocaleString('fr-FR')+' F</td></tr>';
+  }).join('')+
+  `</tbody></table>
+  <h2>💵 Recettes du mois (${recettes.length})</h2>
+  <table><thead><tr><th>Date</th><th>Service</th><th>Client</th><th>Montant</th></tr></thead><tbody>`+
+  recettes.map(function(r){
+    return '<tr><td>'+r.date+'</td><td>'+r.desc+'</td><td>'+(r.client||'—')+'</td><td style="text-align:right;font-weight:600;">'+Number(r.amount).toLocaleString('fr-FR')+' F</td></tr>';
+  }).join('')+
+  `</tbody></table>
+  <div class="total-box">
+    <div class="total-row"><span>Total commandes</span><span>`+totalMontant.toLocaleString('fr-FR')+` F</span></div>
+    <div class="total-row"><span>Avances encaissées</span><span style="color:#10B981;">`+totalAvance.toLocaleString('fr-FR')+` F</span></div>
+    <div class="total-row"><span>Restes à encaisser</span><span style="color:#EF4444;">`+(totalMontant-totalAvance).toLocaleString('fr-FR')+` F</span></div>
+    <div class="total-row main"><span>Total recettes</span><span style="color:#F7971E;">`+totalRecettes.toLocaleString('fr-FR')+` F</span></div>
+  </div>
+  <p style="text-align:center;margin-top:30px;font-size:10px;color:#999;">SLG Kandi — Document généré automatiquement</p>
+  </body></html>`);
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 600);
+}
+
+var WA_MSGS={
+  kandi:"🎉 *SLG Kandi* — Toujours à votre service !\n\n🖨️ Photocopie & Impression\n📸 Photos & Portraits\n🎨 Conception graphique\n👕 T-shirts & Tasses personnalisés\n💼 Cartes de visite & Cachets\n🖼️ Bâche & Roll-up\n💻 Maintenance informatique\n\n✅ Qualité garantie | Prix abordables\n📍 Gansosso, voie pavée, Kandi\n📞 0196 709 750",
+  hors:"📣 *SLG Kandi — On livre partout dans l'Alibori !*\n\nPas besoin de vous déplacer !\n🎨 Logo, Flyer, Affiche\n🖼️ Bâche publicitaire & Roll-up\n👕 T-shirts & Tasses personnalisés\n💼 Cartes de visite & Cachets\n\n📦 Livraison par transport (GTTS/bus)\n✅ Paiement à la livraison possible\n📞 0196 709 750 (WhatsApp)",
+  villageois:"👋 *SLG Kandi* vous accueille lors de vos déplacements en ville !\n\n📸 4 photos d'identité : 500 F\n🖨️ Photocopie : 25 F/page\n👕 T-shirts personnalisés\n\n⚡ Service rapide & soigné\n📍 Gansosso, voie pavée, Kandi\n📞 0196 709 750",
+  eleve:"📚 *Élèves & Étudiants de Kandi !*\n\n📄 Photocopie : 25 F/page\n🖨️ Impression couleur : 150 F/page\n📸 4 photos d'identité : 500 F\n\n⚡ Service rapide !\n📍 Gansosso, Kandi — 📞 0196 709 750",
+  vip:"⭐ Cher(e) client(e) fidèle,\n\nMerci pour votre confiance envers *SLG Kandi* !\n\n🎁 Rappel : après 5 services, le 6ème à moitié prix.\n✨ Nouveautés : Bâche pub, Roll-up, Conception graphique !\n\n📞 0196 709 750 — Toujours à votre service.",
+  prospect:"👋 Bonjour !\n\nNous vous contactons de la part de *SLG Kandi*.\n\n🎨 Logo & Graphisme | 🖨️ Impression | 👕 T-shirts\n💼 Cartes de visite | 🔖 Cachets\n\n✅ Qualité garantie | 📍 Gansosso, Kandi | 📞 0196 709 750",
+  lancement:"🎉 *SLG est ouvert à Kandi !*\n\n📍 Quartier Gansosso, voie pavée\n\n🖨️ Photocopie & Impression • 📸 Photos\n👕 T-shirts & Tasses • 🎨 Conception graphique\n🖼️ Tableaux photo • 💼 Cartes de visite\n🔖 Cachets • 💻 Maintenance informatique\n\n✅ Qualité garantie | Prix abordables\n📞 0196 709 750 (WhatsApp)",
+};
+var currentWaCat='kandi';
+function showWaMsg(cat,el){
+  currentWaCat=cat;
+  document.querySelectorAll('#page-wa .mini-tab').forEach(function(t){ t.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  document.getElementById('wa-preview').textContent=WA_MSGS[cat]||'';
+}
+function copyWaMsg(){ navigator.clipboard.writeText(WA_MSGS[currentWaCat]||'').then(function(){ showToast('✅ Message copié !','var(--green)'); }); }
+function renderWaContactSelect(){
+  var sel=document.getElementById('wa-contact-select');
+  sel.innerHTML='<option value="">-- Choisir --</option>'+DB.contacts.map(function(c){ return '<option value="'+c.phone+'">'+c.name+(c.phone?' ('+c.phone+')':'')+'</option>'; }).join('');
+}
+function sendWa(){
+  var phone=document.getElementById('wa-contact-select').value;
+  if(!phone){ showToast('Choisir un contact.','var(--red)'); return; }
+  window.open('https://wa.me/229'+phone.replace(/\D/g,'')+'?text='+encodeURIComponent(WA_MSGS[currentWaCat]||''),'_blank');
+}
+function sendWaToContact(id){
+  var c=DB.contacts.find(function(x){ return x.id===id; }); if(!c) return;
+  var msg=WA_MSGS[c.cat]||WA_MSGS.kandi;
+  window.open('https://wa.me/229'+c.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ══════════════════════════════════════════════
+// BACKUP
+// ══════════════════════════════════════════════
+function exportBackup(){
+  var backup={version:'3.0',date:new Date().toISOString(),data:DB};
+  var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var ds=new Date().toISOString().slice(0,10);
+  a.href=url; a.download='SLG_backup_v3_'+ds+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  var st=document.getElementById('backup-status');
+  st.textContent='✅ Sauvegarde téléchargée : SLG_backup_v3_'+ds+'.json';
+  st.style.display='block';
+  setTimeout(function(){ st.style.display='none'; },4000);
+}
+
+function importBackup(input){
+  var file=input.files[0]; if(!file) return;
+  checkPin('restaurer une sauvegarde',function(){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var backup=JSON.parse(e.target.result);
+        if(!backup.data){ showToast('❌ Fichier invalide.','var(--red)'); return; }
+        confirmAction('Restaurer','Remplacer TOUTES les données actuelles par celles du '+( backup.date||'?').slice(0,10)+' ?',function(){
+          DB.contacts =backup.data.contacts ||[];
+          DB.commandes=backup.data.commandes||[];
+          DB.recettes =backup.data.recettes ||[];
+          DB.stock    =backup.data.stock    ||[];
+          DB.catalogue=backup.data.catalogue||[];
+          DB.charges  =backup.data.charges  ||[];
+          save(); renderDashboard();
+          showToast('✅ Données restaurées !','var(--green)');
+        });
+      }catch(err){ showToast('❌ Erreur lecture fichier.','var(--red)'); }
+    };
+    reader.readAsText(file);
+  });
+  input.value='';
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+document.getElementById('hdate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+document.getElementById('btn-add-contact').onclick=openModal_contact_new;
+document.getElementById('btn-add-commande').onclick=openModal_commande_new;
+document.getElementById('btn-add-stock').onclick=function(){
+  document.getElementById('modal-stock-title').textContent='Matière Première';
+  document.getElementById('s-id').value='';
+  ['s-name','s-unit','s-qty','s-alert','s-price'].forEach(function(f){ document.getElementById(f).value=''; });
+  openModal('modal-stock');
+};
+</script>
+</body>
+</html>
